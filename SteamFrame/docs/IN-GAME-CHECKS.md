@@ -3,6 +3,13 @@
 What still needs trying in the headset, newest first. Tick items off (or tell Claude) as you go; anything that
 misbehaves, describe it and the next session reads `BepInEx/LogOutput.log` for the details.
 
+## New in 0.3.1
+
+**Big map hints** (open the big map)
+- [ ] Zoom shows D-pad down / up, not LT / RT.
+- [ ] Remove pin shows the bumper; Cross off pin shows the trigger.
+- [ ] Ping (right stick click) and Add pin (Grip + trigger) are unchanged.
+
 ## New in 0.3.0 (installed 2026-11-10)
 
 0.3.0 reorganised the code without changing gameplay, so the main question is "does everything still work as in 0.2.0?".

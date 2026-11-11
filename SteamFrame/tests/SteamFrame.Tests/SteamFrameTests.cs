@@ -17,6 +17,18 @@ namespace VhvrSteamFrame.Tests
             Assert.Contains("button_rs", map["ButtonX"]);
         }
 
+        /// <summary>The keys Valheim's map hints really ask for, from the 0.3.0 game log.</summary>
+        [Fact]
+        public void Map_hints_match_the_keys_valheim_asks_for()
+        {
+            var map = Frame.MapLabels();
+            Assert.Contains("dpad_down", map["LTrigger"]); // "LT / RT  Zoom out/in"
+            Assert.Contains("dpad_up", map["RTrigger"]);
+            Assert.Contains("button_lb", map["TabRight"]); // remove pin = bumper
+            Assert.Contains("button_rt", map["TabLeft"]);  // cross off pin = trigger
+            Assert.Contains("Grip", map["ButtonA"]);       // add pin
+        }
+
         [Fact]
         public void Map_keys_resolve_whether_valheim_asks_for_KEY_JoyX_or_KEY_X()
         {

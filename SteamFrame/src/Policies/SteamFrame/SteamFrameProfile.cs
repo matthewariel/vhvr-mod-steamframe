@@ -58,10 +58,13 @@ namespace VhvrSteamFrame
             {
                 { "MapZoomIn", PromptsPolicy.Glyph("dpad_up") },          // left D-pad up = laser scroll up
                 { "MapZoomOut", PromptsPolicy.Glyph("dpad_down") },
+                // Valheim's zoom hint actually asks for the triggers ("LT / RT  Zoom out/in"; seen in the 0.3.0 log).
+                { "LTrigger", PromptsPolicy.Glyph("dpad_down") },         // zoom out
+                { "RTrigger", PromptsPolicy.Glyph("dpad_up") },           // zoom in
                 { "ButtonX", PromptsPolicy.Glyph("button_rs") },          // ping = right stick click (VHVR middle click)
                 { "ButtonA", "Grip + " + trigger },                       // add pin = grip + trigger chord
-                { "TabLeft", PromptsPolicy.Glyph("button_lb") },          // remove pin = bumper (VHVR right click)
-                { "TabRight", trigger },                                  // cross out = trigger on the pin
+                { "TabRight", PromptsPolicy.Glyph("button_lb") },         // remove pin (Valheim asks for TabRight) = bumper (VHVR right click)
+                { "TabLeft", trigger },                                   // cross off pin (Valheim asks for TabLeft) = trigger on the pin
                 { "DPadUp", trigger },                                    // pin icon / filter: point at it and pull the trigger
                 { "DPadDown", trigger },
                 { "DPadRight", trigger },

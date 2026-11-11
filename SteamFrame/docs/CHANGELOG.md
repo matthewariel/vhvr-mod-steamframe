@@ -3,6 +3,13 @@
 What changed in each version of Steam Frame for VHVR. The full feature list, compared with plain VHVR, is in
 [FEATURES.md](FEATURES.md). Headset testing status is in [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md).
 
+## 0.3.1 (2026-11-10): built, not yet tested in the headset
+
+### Fixed
+- **Big map hints:** three labels were wrong, found from the first 0.3.0 play session's log.
+  - Zoom showed LT / RT; it now shows D-pad down / up (out / in).
+  - Remove pin and Cross off pin were swapped; Remove pin now shows the bumper and Cross off pin the trigger.
+
 ## 0.3.0 (2026-11-10): installed, not yet tested in the headset
 
 **No gameplay changes.** Every 0.2.0 feature, setting name and default is the same. This version is about where the code
