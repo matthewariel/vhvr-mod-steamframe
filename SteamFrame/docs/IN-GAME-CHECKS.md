@@ -3,12 +3,27 @@
 What still needs trying in the headset, newest first. Tick items off (or tell Claude) as you go; anything that
 misbehaves, describe it and the next session reads `BepInEx/LogOutput.log` for the details.
 
-## New in 0.3.1
+## New in 0.3.1 (installed 2026-11-10, 22:41)
+
+**Log first**
+- [ ] `Steam Frame for VHVR 0.3.1: 9/9 modules active (all on).`
 
 **Big map hints** (open the big map)
 - [ ] Zoom shows D-pad down / up, not LT / RT.
-- [ ] Remove pin shows the bumper; Cross off pin shows the trigger.
+- [ ] Remove pin shows the bumper.
+- [ ] Cross off pin shows the trigger.
 - [ ] Ping (right stick click) and Add pin (Grip + trigger) are unchanged.
+- [ ] "Toggle pins" shows the trigger (point at the pin icon and pull). Say so if that isn't how it works.
+
+**Seen in the 0.3.0 session's log, needs your word on how it felt**
+- [ ] The message "Punch: thumb-on-stick can't be sensed..." appeared once, around a moment when one controller
+      dropped out. Does punching with grip + thumb on the stick still work, and still refuse without the thumb? If yes,
+      it was a false alarm (the 30 s wait before warning is too short for a controller dropout).
+- [ ] A seated recenter measured 1.27 m and kept your standing height (1.61 m). Did your in-game height look right?
+
+**For whoever troubleshoots next:** the 0.3.0 session's log (2026-11-10, 20:38 to about 22:30) had no warnings or errors
+from this plugin: VHVR 0.11.1 recognised, 9/9 modules, Steam Frame detected, tab added, binding left untouched, saved
+server password used on join. Starting Valheim overwrites `LogOutput.log`, so read it before the next launch.
 
 ## New in 0.3.0 (installed 2026-11-10)
 
