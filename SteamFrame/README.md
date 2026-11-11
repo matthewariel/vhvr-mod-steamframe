@@ -59,13 +59,13 @@ SteamFrame/
     Policies/               the rules, as plain C# with no game references (unit-tested)
       AllHeadsets/          punch, posture, crouch, prompts, button guide, controller profile
       SteamFrame/           the Steam Frame profile and its binding tweaks
-      Extras/               server password store, map sharing
+      Extras/               server password store, map sharing, session log names
     VhvrSteamFrame/         the BepInEx plugin (the only DLL that ships)
       Core/                 plugin entry, module base, the list of VHVR internals (VhvrApi)
       Controllers/          which controller is in use
       AllHeadsets/          hooks for Prompts, MenuStickClicks, Crouch, Punch, Posture
       SteamFrame/           hooks for Bindings
-      Extras/               hooks for ServerPasswords, MapSharing
+      Extras/               hooks for ServerPasswords, MapSharing, SessionLogs
       UI/SettingsTab/       the tab in VHVR's settings
       Assets/               the recenter pose picture
   tests/
@@ -90,12 +90,14 @@ A module that can't find the VHVR code it needs switches itself off and logs why
 | Bindings | Steam Frame | Binding tweaks applied to Valheim's copy of VHVR's Frame binding (restart to apply) | `[Bindings]` |
 | ServerPasswords | Extra | Remembers a server's password after a successful join (Windows DPAPI-encrypted) | `[Servers]` |
 | MapSharing | Extra | Turns on "public position" on the map when you join | `[Map]` |
+| SessionLogs | Extra | Saves each game session's log to `BepInEx/SessionLogs/<start time>.log` (BepInEx overwrites `LogOutput.log` every launch) | `[SessionLogs]` |
 
 ## What it writes
 
 Only inside Valheim's folder: its settings file, Valheim's copy of the Frame binding
 (`valheim_Data/StreamingAssets/SteamVR/bindings_frame_controller.json`, with VHVR's original kept in
-`BepInEx/config/VhvrSteamFrame/`), and `server-passwords.dat` once a password is saved. Nothing in SteamVR's own
+`BepInEx/config/VhvrSteamFrame/`), `server-passwords.dat` once a password is saved, and one log file per game session
+in `BepInEx/SessionLogs/` (the last 50 are kept). Nothing in SteamVR's own
 settings. Details: [docs/FEATURES.md](docs/FEATURES.md#files-it-writes).
 
 ## Docs

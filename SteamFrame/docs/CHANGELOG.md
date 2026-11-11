@@ -3,6 +3,13 @@
 What changed in each version of Steam Frame for VHVR. The full feature list, compared with plain VHVR, is in
 [FEATURES.md](FEATURES.md). Headset testing status is in [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md).
 
+## 0.3.3 (2026-11-10): installed, not yet tested in the headset
+
+### Added
+- **A log file per game session** (new SessionLogs module, Extra). BepInEx overwrites `LogOutput.log` each launch, so
+  each session is now also saved to `BepInEx/SessionLogs/<start time>.log`, with the last 50 kept
+  (`[SessionLogs] Enabled`, `Keep`). `LogOutput.log` is unchanged. The startup summary is now `10/10 modules active`.
+
 ## 0.3.2 (2026-11-10): installed, not yet tested in the headset
 
 ### Fixed

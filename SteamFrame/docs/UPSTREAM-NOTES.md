@@ -26,6 +26,7 @@ Before any pull request: **ask on the VHVR Discord first** whether the maintaine
 | Frame binding tweaks | Steam Frame | [UPSTREAM.md](../src/VhvrSteamFrame/SteamFrame/Bindings/UPSTREAM.md) |
 | Server passwords | Extra | [UPSTREAM.md](../src/VhvrSteamFrame/Extras/ServerPasswords/UPSTREAM.md). Stays out of VHVR |
 | Map position sharing | Extra | [UPSTREAM.md](../src/VhvrSteamFrame/Extras/MapSharing/UPSTREAM.md). Stays out of VHVR |
+| Session logs | Extra | [UPSTREAM.md](../src/VhvrSteamFrame/Extras/SessionLogs/UPSTREAM.md). Stays out of VHVR |
 
 ## Order, if it ever happens
 

@@ -97,6 +97,50 @@ namespace VhvrSteamFrame.Tests
         }
     }
 
+    public class SessionLogTests
+    {
+        private static readonly DateTime Start = new DateTime(2026, 11, 10, 23, 41, 5);
+
+        [Fact]
+        public void Session_log_is_named_after_its_start_time()
+        {
+            Assert.Equal("2026-11-10_23-41-05.log", SessionLogPolicy.FileNameFor(Start, _ => false));
+        }
+
+        [Fact]
+        public void Second_launch_in_the_same_second_gets_a_suffix()
+        {
+            var taken = new HashSet<string> { "2026-11-10_23-41-05.log", "2026-11-10_23-41-05_2.log" };
+            Assert.Equal("2026-11-10_23-41-05_3.log", SessionLogPolicy.FileNameFor(Start, taken.Contains));
+        }
+
+        [Fact]
+        public void Oldest_logs_beyond_the_limit_are_deleted()
+        {
+            var files = new[]
+            {
+                "2026-11-10_23-41-05.log", "2026-11-09_08-00-00.log", "2026-11-10_23-41-05_10.log",
+                "2026-11-10_23-41-05_2.log", "2025-01-01_00-00-00.log",
+            };
+            Assert.Equal(new[] { "2025-01-01_00-00-00.log", "2026-11-09_08-00-00.log", "2026-11-10_23-41-05.log" },
+                SessionLogPolicy.ToDelete(files, 2));
+        }
+
+        [Fact]
+        public void Only_session_log_names_are_ever_deleted()
+        {
+            var files = new[] { "notes.txt", "LogOutput.log", "2026-11-10_23-41-05.log.bak", "2026-11-10.log", "2026-11-10_23-41-05.log" };
+            Assert.Empty(SessionLogPolicy.ToDelete(files, 1));
+        }
+
+        [Fact]
+        public void Keep_is_clamped_to_at_least_one()
+        {
+            var files = new[] { "2026-11-09_08-00-00.log", "2026-11-10_23-41-05.log" };
+            Assert.Equal(new[] { "2026-11-09_08-00-00.log" }, SessionLogPolicy.ToDelete(files, 0));
+        }
+    }
+
     public class VersionTests
     {
         /// <summary>BepInEx needs the version as a const in Plugin.cs; the build takes it from Directory.Build.props.</summary>

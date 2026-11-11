@@ -42,6 +42,7 @@ Scope legend (the same badges appear on the in-game tab):
 | Thumb touch sensing | **Steam Frame** | Only "flick up" was sensed | Whole-stick touch is sensed, for the punch requirement | Frame binding file | Confirmed |
 | Server passwords | **Extra** (not VR) | Typed with the virtual keyboard on every join | Remembered after a successful join (encrypted), filled in next time | Windows DPAPI | Untested |
 | Map position sharing | **Extra** (not VR) | Off unless you tick it on the full map | Turned on each time you join a world | Nothing | Confirmed |
+| Session logs | **Extra** (not VR) | `LogOutput.log` holds only the latest session | Every session also saved in `BepInEx/SessionLogs/`, last 50 kept | Nothing | Untested |
 
 ## All headsets vs Steam Frame
 
@@ -255,9 +256,21 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
 - The checkbox is hard to reach in VR; you can still untick it on the full map.
 - `[Map] SharePositionOnJoin` (on).
 
+### A log file per game session (SessionLogs module, new in 0.3.3)
+*Scope: Extra (not VR).*
+
+- BepInEx overwrites `BepInEx/LogOutput.log` every time the game starts, so the previous session's log is lost.
+- This module also saves each session to `BepInEx/SessionLogs/<start time>.log` (for example
+  `2026-11-10_23-41-05.log`): at startup it copies what `LogOutput.log` holds so far, then writes the rest of the session
+  there too, with the same levels and format. `LogOutput.log` itself is unchanged.
+- Written every 2 s and when the game quits, so a crash loses at most the last 2 s.
+- The oldest files beyond `Keep` are deleted at startup. Only files named like a session log are ever deleted.
+- `[SessionLogs] Enabled` (on), `Keep` (50). Config file only, not on the tab.
+
 ### Logging
 - The VHVR version at startup, with one warning if it isn't a tested one.
-- One line per module at startup (ready / disabled and why), then a summary line (`9/9 modules active`) and a
+- Each session's log is also kept in `BepInEx/SessionLogs/` (see above).
+- One line per module at startup (ready / disabled and why), then a summary line (`10/10 modules active`) and a
   `Modules:` line that groups them: `[all headsets] ... [Steam Frame] ... [extras] ...`.
 - A one-time line when Frame controllers are detected.
 - "Height:" lines for each measurement.
@@ -286,6 +299,8 @@ settings are tested on Steam Frame only.
 | Map | SharePositionOnJoin | Extra | true | Public map position on each join |
 | Servers | RememberPasswords | Extra | true | Save server passwords after a successful join |
 | Servers | ForgetSavedPasswords | Extra | false | Tick + OK deletes all saved passwords |
+| SessionLogs | Enabled | Extra | true | Also save each session's log in `BepInEx/SessionLogs` (from the next launch) |
+| SessionLogs | Keep | Extra | 50 | How many session logs to keep (1–1000) |
 | Punch | RequireGrip | All headsets | true | Punch needs grip |
 | Punch | RequireTrigger | All headsets | false | Punch needs trigger |
 | Punch | RequireThumbOnStick | All headsets | true | Punch needs thumb resting on the stick |
@@ -312,6 +327,7 @@ settings are tested on Steam Frame only.
 | `BepInEx/config/VhvrSteamFrame/bindings_frame_controller.vhvr.json` | VHVR's untouched Frame binding (the base copy) |
 | `BepInEx/config/VhvrSteamFrame/bindings_frame_controller.written.sha256` | Fingerprint of the last write, to notice VHVR updates |
 | `BepInEx/config/VhvrSteamFrame/server-passwords.dat` | Only once a password is saved (DPAPI-encrypted); deleted when emptied |
+| `BepInEx/SessionLogs/<start time>.log` | One per game session (about 40 KB each); the oldest beyond `[SessionLogs] Keep` are deleted |
 
 ## What it does not change
 - SteamVR's settings, bindings for other games, or anything outside the Valheim folder.

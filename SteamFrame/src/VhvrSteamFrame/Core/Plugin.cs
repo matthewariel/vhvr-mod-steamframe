@@ -40,6 +40,8 @@ namespace VhvrSteamFrame
             var imported = Config.Bind("General", "ImportedOldSettings", false,
                 "Set once settings from the older 'VR Gamepad Prompts' plugin have been carried over (or there were none).");
 
+            // First, so the session's log file is open before the other modules log anything.
+            modules.Add(new SessionLogsHooks());
             modules.Add(new PromptsHooks());
             modules.Add(new MenuStickClicksHooks());
             modules.Add(new CrouchHooks());
