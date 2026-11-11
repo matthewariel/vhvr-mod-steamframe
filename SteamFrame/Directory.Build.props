@@ -8,7 +8,7 @@
   -->
   <PropertyGroup>
     <!-- The one place the plugin version is written. Plugin.Version (a const, for BepInEx) must match: a unit test checks it. -->
-    <SteamFrameVersion>0.3.2</SteamFrameVersion>
+    <SteamFrameVersion>0.3.3</SteamFrameVersion>
 
     <CommonDir Condition="'$(CommonDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\</CommonDir>
     <CommonDir>$([MSBuild]::EnsureTrailingSlash('$(CommonDir)'))</CommonDir>
