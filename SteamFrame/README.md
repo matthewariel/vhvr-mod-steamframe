@@ -5,7 +5,7 @@ Steam Frame controllers feel right in Valheim: button prompts that show the real
 punching, seated/standing play, safer Frame bindings, and a **Steam Frame** tab in VHVR's settings with a button guide
 and the recenter pose. It runs next to official VHVR and changes none of VHVR's files and no SteamVR setting.
 
-Version 0.3.1, built against VHVR 0.11.1. Everything is tested on a Steam Frame only.
+Version 0.3.2, built against VHVR 0.11.1. Everything is tested on a Steam Frame only.
 
 ## Scope legend
 
