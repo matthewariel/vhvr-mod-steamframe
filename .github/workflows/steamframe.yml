@@ -1,0 +1,32 @@
+# Tests for the Steam Frame plugin (SteamFrame/). VHVR itself has no CI and this workflow never touches it.
+# The plugin DLL is not built here: that needs Valheim's files. Only the pure rules are tested.
+name: Steam Frame plugin
+
+on:
+  push:
+    paths:
+      - 'SteamFrame/**'
+      - '.github/workflows/steamframe.yml'
+  pull_request:
+    paths:
+      - 'SteamFrame/**'
+      - '.github/workflows/steamframe.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Unit tests
+        run: dotnet test SteamFrame/tests/SteamFrame.Tests -c Release
+
+      - name: Rules still compile for VHVR (.NET Framework 4.6, C# 7.3)
+        run: dotnet build SteamFrame/tests/PoliciesCompat -c Release
