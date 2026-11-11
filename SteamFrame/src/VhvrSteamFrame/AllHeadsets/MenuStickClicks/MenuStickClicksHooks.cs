@@ -12,6 +12,7 @@ namespace VhvrSteamFrame
     internal class MenuStickClicksHooks : Module
     {
         public override string Name => "MenuStickClicks";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         internal static ConfigEntry<bool> Enabled;
 

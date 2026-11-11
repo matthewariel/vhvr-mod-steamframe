@@ -18,6 +18,7 @@ namespace VhvrSteamFrame
     internal class ServerPasswordsHooks : Module
     {
         public override string Name => "ServerPasswords";
+        public override ModuleScope Scope => ModuleScope.Extra;
 
         internal static ConfigEntry<bool> Remember;
         internal static ConfigEntry<bool> ForgetAll;

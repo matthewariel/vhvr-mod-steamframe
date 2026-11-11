@@ -21,6 +21,7 @@ namespace VhvrSteamFrame
     internal class BindingsHooks : Module
     {
         public override string Name => "Bindings";
+        public override ModuleScope Scope => ModuleScope.SteamFrame;
 
         internal static ConfigEntry<bool> Manage, ThumbTouchSensing, SprintToggleOnLeftStickClick, CrouchOnRightStickClick, NoStickFlickRunCrouch;
 
@@ -29,7 +30,13 @@ namespace VhvrSteamFrame
         internal static bool ThumbTouchSensingEnabled => Manage == null || (Manage.Value && ThumbTouchSensing.Value);
 
         /// <summary>The binding file Valheim gives SteamVR.</summary>
-        internal static string TargetPath => Path.Combine(UnityEngine.Application.streamingAssetsPath, "SteamVR", "bindings_frame_controller.json");
+        internal static string TargetPath => PathFor(SteamFrameProfile.Instance);
+
+        /// <summary>Where Valheim keeps the binding file of a controller profile.</summary>
+        internal static string PathFor(ControllerProfile profile)
+        {
+            return Path.Combine(UnityEngine.Application.streamingAssetsPath, "SteamVR", profile.BindingFileName);
+        }
 
         private static string StoreDir => Path.Combine(Paths.ConfigPath, "VhvrSteamFrame");
         private static string BasePath => Path.Combine(StoreDir, "bindings_frame_controller.vhvr.json");
@@ -54,6 +61,10 @@ namespace VhvrSteamFrame
 
             foreach (var entry in new[] { Manage, ThumbTouchSensing, SprintToggleOnLeftStickClick, CrouchOnRightStickClick, NoStickFlickRunCrouch })
                 entry.SettingChanged += (_, __) => OnSettingChanged();
+
+            // Tell the all-headset modules (prompt labels) what the stick clicks do now.
+            BindingFacts.CrouchOnStickClick = () => CrouchOnRightStickClickEnabled;
+            BindingFacts.SprintOnStickClick = () => SprintToggleOnLeftStickClickEnabled;
         }
 
         protected override void Start(Harmony harmony)
@@ -120,10 +131,10 @@ namespace VhvrSteamFrame
                 : "Steam Frame bindings changed. Restart Valheim to use them.");
         }
 
-        /// <summary>The binding document currently on disk, for the button guide.</summary>
-        internal static JObject ReadCurrent()
+        /// <summary>The binding document currently on disk for a controller profile, for the button guide.</summary>
+        internal static JObject ReadCurrent(ControllerProfile profile)
         {
-            return JObject.Parse(File.ReadAllText(TargetPath));
+            return JObject.Parse(File.ReadAllText(PathFor(profile)));
         }
 
         private static string Hash(string text)

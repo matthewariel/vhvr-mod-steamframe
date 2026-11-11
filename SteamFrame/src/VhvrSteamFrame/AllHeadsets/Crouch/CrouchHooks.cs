@@ -12,6 +12,7 @@ namespace VhvrSteamFrame
     internal class CrouchHooks : Module
     {
         public override string Name => "Crouch";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         private const string VhvrHarmonyId = "com.valheimvrmod.patches";
 

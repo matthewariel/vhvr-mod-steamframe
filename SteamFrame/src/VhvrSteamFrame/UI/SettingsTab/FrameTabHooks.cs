@@ -18,6 +18,7 @@ namespace VhvrSteamFrame
     internal class FrameTabHooks : Module
     {
         public override string Name => "FrameTab";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         internal static ConfigEntry<bool> ShowTab;
 

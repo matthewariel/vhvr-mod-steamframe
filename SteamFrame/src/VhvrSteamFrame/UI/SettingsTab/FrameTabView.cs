@@ -71,6 +71,9 @@ namespace VhvrSteamFrame
             Refresh();
         }
 
+        /// <summary>The controller whose buttons the guide shows: the one in use, else the forced (Steam Frame) profile.</summary>
+        private static ControllerProfile GuideProfile => ControllerDetector.ActiveProfile ?? ControllerDetector.ForcedProfile;
+
         // ---- Pages ----
 
         private void BuildSettings(Transform page)
@@ -102,7 +105,7 @@ namespace VhvrSteamFrame
 
             Header(page, "<b>Prompts</b>", RightX, ref y);
             Row(page, "Button labels", PromptsHooks.ButtonLabels, RightX, ref y);
-            Row(page, "Map hints show Frame buttons", PromptsHooks.FrameMapHints, RightX, ref y);
+            Row(page, "Map hints show Frame buttons", PromptsHooks.MapHints, RightX, ref y);
             Row(page, "Steam Frame detection", Plugin.FrameDetection, RightX, ref y);
         }
 
@@ -113,7 +116,7 @@ namespace VhvrSteamFrame
             var extra = Label(page, new Vector2(140f, TopY + 10f), new Vector2(320f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
             try
             {
-                var rows = BindingTable.Build(BindingsHooks.ReadCurrent());
+                var rows = BindingTable.Build(BindingsHooks.ReadCurrent(GuideProfile));
                 left.text = BindingTable.Format(rows, "Left");
                 right.text = BindingTable.Format(rows, "Right");
             }
@@ -194,10 +197,10 @@ namespace VhvrSteamFrame
             if (status != null)
             {
                 string detection;
-                switch (FrameDetector.State)
+                switch (ControllerDetector.State)
                 {
-                    case FrameDetector.Result.Frame: detection = "<color=#9be29b>Steam Frame controllers detected</color>"; break;
-                    case FrameDetector.Result.Other: detection = $"<color=#ffb347>Steam Frame not detected</color> ({FrameDetector.LeftType ?? "?"} / {FrameDetector.RightType ?? "?"})"; break;
+                    case ControllerDetector.Result.Recognized: detection = $"<color=#9be29b>{ControllerDetector.DetectedProfile?.DisplayName} controllers detected</color>"; break;
+                    case ControllerDetector.Result.Unrecognized: detection = $"<color=#ffb347>Steam Frame not detected</color> ({ControllerDetector.LeftType ?? "?"} / {ControllerDetector.RightType ?? "?"})"; break;
                     default: detection = "Looking for controllers..."; break;
                 }
                 status.text = detection + (BindingsHooks.RestartNeeded ? "   <color=#ffb347>Frame bindings changed: restart Valheim</color>" : "");

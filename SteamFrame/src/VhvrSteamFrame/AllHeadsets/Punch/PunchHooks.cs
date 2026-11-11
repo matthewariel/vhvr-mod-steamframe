@@ -18,6 +18,7 @@ namespace VhvrSteamFrame
     internal class PunchHooks : Module
     {
         public override string Name => "Punch";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         internal static ConfigEntry<bool> RequireGrip, RequireTrigger, RequireThumbOnStick, Diagnostics;
         internal static readonly PunchRequirements Requirements = new PunchRequirements();

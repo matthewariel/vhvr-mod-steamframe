@@ -14,6 +14,7 @@ namespace VhvrSteamFrame
     internal class PostureHooks : Module
     {
         public override string Name => "Posture";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         internal static ConfigEntry<string> Mode;
         internal static ConfigEntry<float> StandingEyeHeight;

@@ -9,8 +9,9 @@ using BepInEx.Logging;
 namespace VhvrSteamFrame
 {
     /// <summary>
-    /// Steam Frame support for VHVR, as independent modules (see Modules/*). Each module keeps its rules in a *Policy
-    /// class (plain C#, the part that could move into VHVR) and its Harmony/reflection glue in a *Hooks class.
+    /// Steam Frame support for VHVR, as independent modules grouped by who they are for: AllHeadsets/, SteamFrame/ and
+    /// Extras/ (see docs/ARCHITECTURE.md). Each module keeps its rules in plain C# under src/Policies (the part that
+    /// could move into VHVR) and its Harmony/reflection glue in a *Hooks class here.
     /// </summary>
     [BepInPlugin(Guid, Name, Version)]
     [BepInDependency(VhvrGuid, BepInDependency.DependencyFlags.HardDependency)]
@@ -65,11 +66,19 @@ namespace VhvrSteamFrame
 
             Log.LogInfo($"{Name} {Version}: {modules.Count(m => m.Active)}/{modules.Count} modules active " +
                         $"({string.Join(", ", modules.Where(m => !m.Active).Select(m => m.Name + " off").DefaultIfEmpty("all on"))}).");
+            Log.LogInfo($"Modules: [all headsets] {Group(ModuleScope.AllHeadsets)} [Steam Frame] {Group(ModuleScope.SteamFrame)} " +
+                        $"[extras] {Group(ModuleScope.Extra)}");
+        }
+
+        /// <summary>"Prompts, Crouch (off), Punch" for the startup log.</summary>
+        private string Group(ModuleScope scope)
+        {
+            return string.Join(", ", modules.Where(m => m.Scope == scope).Select(m => m.Name + (m.Active ? "" : " (off)")).DefaultIfEmpty("none"));
         }
 
         private void Update()
         {
-            FrameDetector.Tick();
+            ControllerDetector.Tick();
             foreach (var m in modules) m.TryTick();
             Hud.Tick();
         }

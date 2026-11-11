@@ -10,6 +10,7 @@ namespace VhvrSteamFrame
     internal class MapSharingHooks : Module
     {
         public override string Name => "MapSharing";
+        public override ModuleScope Scope => ModuleScope.Extra;
 
         internal static ConfigEntry<bool> SharePositionOnJoin;
 

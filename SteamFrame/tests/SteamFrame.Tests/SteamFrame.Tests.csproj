@@ -15,7 +15,7 @@
   <ItemGroup>
     <Compile Include="..\..\src\Policies\**\*.cs" LinkBase="Policies" />
     <!-- The plugin's Windows password encryption: plain P/Invoke, so it can be tested here too (Windows only). -->
-    <Compile Include="..\..\src\VhvrSteamFrame\Modules\ServerPasswords\Dpapi.cs" Link="Plugin\Dpapi.cs" />
+    <Compile Include="..\..\src\VhvrSteamFrame\Extras\ServerPasswords\Dpapi.cs" Link="Plugin\Dpapi.cs" />
     <None Include="fixtures\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 

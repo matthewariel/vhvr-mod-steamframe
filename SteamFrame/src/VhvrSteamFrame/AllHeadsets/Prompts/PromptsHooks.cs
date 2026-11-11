@@ -17,17 +17,25 @@ namespace VhvrSteamFrame
     internal class PromptsHooks : Module
     {
         public override string Name => "Prompts";
+        public override ModuleScope Scope => ModuleScope.AllHeadsets;
 
         internal static ConfigEntry<bool> ForcePrompts;
         internal static ConfigEntry<bool> ForceMenuHints;
         internal static ConfigEntry<string> ButtonLabels;
         internal static ConfigEntry<string> PromptOverrides;
-        internal static ConfigEntry<bool> FrameMapHints;
+        internal static ConfigEntry<bool> MapHints;
+
+        // [Prompts] ButtonLabels values. The names are part of the saved settings, so they stay as they are:
+        // "Frame" = always use the forced controller profile's labels, "Auto" = the detected profile's, "Xbox" = Valheim's own.
+        private const string LabelsAlways = "Frame";
+        private const string LabelsAuto = "Auto";
 
         private static Dictionary<string, string> overrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        private static Dictionary<string, string> frameLabels;
-        private static int frameLabelsKey = -1;
-        private static readonly Dictionary<string, string> mapLabels = SteamFrameProfile.Instance.MapLabels();
+
+        // Labels of the profile in use, rebuilt when the profile or the binding facts change.
+        private static ControllerProfile labelsProfile, mapLabelsProfile;
+        private static Dictionary<string, string> profileLabels, mapLabels;
+        private static int profileLabelsKey = -1;
 
         // One-time log of what the big map's hints ask for, so labels can be matched to Valheim's exact keys.
         private static readonly HashSet<string> mapKeysSeen = new HashSet<string>();
@@ -69,7 +77,7 @@ namespace VhvrSteamFrame
                 "Optional custom labels that replace a prompt entirely. Format: Action=Label; Action=Label  (e.g. \"Use=Right A; AltPlace=Left Grip\"). " +
                 "Common actions: Use, AltPlace, AltKeys, Remove, Hide, Attack, SecondaryAttack, Block, Jump, Crouch, Run, Inventory, Map. " +
                 "Labels can include TextMeshPro tags, e.g. <sprite=\"xbox\" name=\"button_y\">. These win over ButtonLabels.");
-            FrameMapHints = config.Bind("Prompts", "FrameMapHints", true,
+            MapHints = config.Bind("Prompts", "FrameMapHints", true,
                 "On the big map, label the hints with the Frame buttons that work with VHVR's laser (zoom = D-pad up/down, " +
                 "ping = right stick click, pin = grip + trigger, remove = bumper) instead of Valheim's gamepad map controls.");
 
@@ -181,9 +189,13 @@ namespace VhvrSteamFrame
             bool mapOpen = MapOpen();
             if (mapOpen && !mapReported && mapKeysSeen.Count < 64) mapKeysSeen.Add(__0);
 
-            if (overrides.TryGetValue(action, out var label) ||
-                (mapOpen && FrameMapHints.Value && ForceMenuHints.Value && UseFrameLabels() && mapLabels.TryGetValue(action, out label)) ||
-                (ForcePrompts.Value && UseFrameLabels() && CurrentFrameLabels().TryGetValue(action, out label)))
+            if (overrides.TryGetValue(action, out var label)) { __result = label; return false; }
+
+            var profile = LabelProfile();
+            if (profile == null) return true; // no controller profile: Valheim's own labels
+
+            if ((mapOpen && MapHints.Value && ForceMenuHints.Value && MapLabels(profile).TryGetValue(action, out label)) ||
+                (ForcePrompts.Value && PromptLabels(profile).TryGetValue(action, out label)))
             {
                 __result = label;
                 return false;
@@ -222,27 +234,40 @@ namespace VhvrSteamFrame
                                $"Hint texts: {string.Join(" | ", texts.DefaultIfEmpty("none"))}");
         }
 
-        private static bool UseFrameLabels()
+        /// <summary>The controller profile whose button names the prompts should show, or null for Valheim's own labels.</summary>
+        private static ControllerProfile LabelProfile()
         {
             string style = ButtonLabels.Value;
-            return style == "Frame" || (style == "Auto" && FrameDetector.IsFrame);
+            if (style == LabelsAlways) return ControllerDetector.ForcedProfile;
+            return style == LabelsAuto ? ControllerDetector.ActiveProfile : null;
         }
 
-        private static Dictionary<string, string> CurrentFrameLabels()
+        private static Dictionary<string, string> MapLabels(ControllerProfile profile)
         {
-            bool crouch = BindingsHooks.CrouchOnRightStickClickEnabled;
-            bool sprint = BindingsHooks.SprintToggleOnLeftStickClickEnabled;
+            if (mapLabels == null || profile != mapLabelsProfile)
+            {
+                mapLabels = profile.MapLabels();
+                mapLabelsProfile = profile;
+            }
+            return mapLabels;
+        }
+
+        private static Dictionary<string, string> PromptLabels(ControllerProfile profile)
+        {
+            bool crouch = BindingFacts.CrouchOnStickClick();
+            bool sprint = BindingFacts.SprintOnStickClick();
             bool doubleCrouch = CrouchHooks.DoubleClickEnabled;
             int key = (crouch ? 1 : 0) | (sprint ? 2 : 0) | (doubleCrouch ? 4 : 0);
-            if (frameLabels == null || key != frameLabelsKey)
+            if (profileLabels == null || key != profileLabelsKey || profile != labelsProfile)
             {
-                frameLabels = SteamFrameProfile.Instance.PromptLabels(new PromptLabelOptions
+                profileLabels = profile.PromptLabels(new PromptLabelOptions
                 {
                     CrouchOnStickClick = crouch, SprintOnStickClick = sprint, DoubleClickCrouch = doubleCrouch,
                 });
-                frameLabelsKey = key;
+                profileLabelsKey = key;
+                labelsProfile = profile;
             }
-            return frameLabels;
+            return profileLabels;
         }
     }
 }

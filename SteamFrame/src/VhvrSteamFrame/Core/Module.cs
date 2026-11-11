@@ -4,6 +4,17 @@ using HarmonyLib;
 
 namespace VhvrSteamFrame
 {
+    /// <summary>Who a module is for. Drives the source folders, the startup log, the settings tab badges and the docs.</summary>
+    internal enum ModuleScope
+    {
+        /// <summary>Works with any VR controller VHVR supports (tested on Steam Frame only).</summary>
+        AllHeadsets,
+        /// <summary>Only makes sense with Steam Frame controllers.</summary>
+        SteamFrame,
+        /// <summary>Not about VR at all; a convenience that happens to live here.</summary>
+        Extra,
+    }
+
     /// <summary>
     /// One feature. Each module binds its own config section, installs its own Harmony patches (under its own Harmony id,
     /// so a failure unpatches just that module), and can't take the others down with it.
@@ -11,6 +22,9 @@ namespace VhvrSteamFrame
     internal abstract class Module
     {
         public abstract string Name { get; }
+
+        /// <summary>Which group the module belongs to (see <see cref="ModuleScope"/>).</summary>
+        public abstract ModuleScope Scope { get; }
 
         /// <summary>True once Start succeeded.</summary>
         public bool Active { get; private set; }
