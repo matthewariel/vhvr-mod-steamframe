@@ -11,9 +11,12 @@ namespace VhvrSteamFrame
 {
     /// <summary>
     /// Contents of the Steam Frame tab, in three pages picked with buttons along the top:
-    ///  - Settings: punch, crouch, servers, Frame bindings, prompts (VHVR rows, saved by VHVR's OK button);
-    ///  - Button guide: what each Frame button does, read from the binding file, plus map and chest controls;
+    ///  - Settings (VHVR rows, saved by VHVR's OK button), grouped by who each setting is for:
+    ///    left column ALL HEADSETS (punch, crouch, prompts), right column STEAM FRAME (binding tweaks, detection),
+    ///    and below that EXTRA (server passwords, map sharing);
+    ///  - Button guide: what each button of the active controller does, read from its binding file, plus map and chest controls;
     ///  - Recenter &amp; height: a picture of VHVR's recenter pose, seated/standing settings, last measurement.
+    /// Every section header carries a coloured badge with its scope; a legend under the status line explains them.
     /// Positions follow VHVR's layout: rows 30 px apart, a row is a ~200 px label left of a ~150 px control at its x.
     /// </summary>
     internal class FrameTabView : MonoBehaviour
@@ -22,7 +25,7 @@ namespace VhvrSteamFrame
         private const float LeftX = -250f;
         private const float RightX = 250f;
         private const float HeightX = 170f;
-        private const float TopY = 205f;
+        private const float TopY = 190f; // first row; the status line and the scope legend sit above it
 
         private static readonly string[] PageTitles = { "Settings", "Button guide", "Recenter & height" };
         private static int currentPage;
@@ -42,6 +45,9 @@ namespace VhvrSteamFrame
             this.labelPrefab = labelPrefab;
 
             status = Label(transform, new Vector2(0f, 238f), new Vector2(900f, 24f), 14f, TextAlignmentOptions.Center);
+            var legend = Label(transform, new Vector2(0f, 217f), new Vector2(940f, 18f), 12f, TextAlignmentOptions.Center);
+            legend.text = $"{Badge(ModuleScope.AllHeadsets)} = any VR controller (tested on Steam Frame)   |   " +
+                          $"{Badge(ModuleScope.SteamFrame)} = Frame only   |   {Badge(ModuleScope.Extra)} = not VR";
 
             for (int i = 0; i < PageTitles.Length; i++) pages.Add(NewPage(PageTitles[i]));
             BuildSettings(pages[0].transform);
@@ -78,35 +84,40 @@ namespace VhvrSteamFrame
 
         private void BuildSettings(Transform page)
         {
+            // Left column: works with any VR controller.
             float y = TopY;
-            Header(page, "<b>Punch</b>  <size=80%>what a bare hand needs held</size>", LeftX, ref y);
+            Header(page, "<b>Punch</b>  <size=80%>what a bare hand needs held</size>", ModuleScope.AllHeadsets, LeftX, ref y);
             grip = Row(page, "Require grip", PunchHooks.RequireGrip, LeftX, ref y);
             trigger = Row(page, "Require trigger", PunchHooks.RequireTrigger, LeftX, ref y);
             thumb = Row(page, "Require thumb on stick", PunchHooks.RequireThumbOnStick, LeftX, ref y);
             punchNote = Label(page, new Vector2(LeftX - 30f, y - 2f), new Vector2(420f, 36f), 13f, TextAlignmentOptions.Center);
             y -= 40f;
 
-            Header(page, "<b>Crouch</b>  <size=80%>right stick click</size>", LeftX, ref y);
+            Header(page, "<b>Crouch</b>", ModuleScope.AllHeadsets, LeftX, ref y);
             Row(page, "Ignore crouch in menus and map", CrouchHooks.BlockInMenus, LeftX, ref y);
             Row(page, "Double-click to crouch", CrouchHooks.DoubleClick, LeftX, ref y);
 
-            Header(page, "<b>Servers</b>", LeftX, ref y);
-            Row(page, "Remember server passwords", ServerPasswordsHooks.Remember, LeftX, ref y);
-            Row(page, "Forget saved passwords", ServerPasswordsHooks.ForgetAll, LeftX, ref y);
-            serverNote = Label(page, new Vector2(LeftX - 30f, y + 4f), new Vector2(420f, 22f), 12f, TextAlignmentOptions.Center);
+            Header(page, "<b>Prompts</b>", ModuleScope.AllHeadsets, LeftX, ref y);
+            Row(page, "Button labels", PromptsHooks.ButtonLabels, LeftX, ref y);
+            Row(page, "Map hints show VR buttons", PromptsHooks.MapHints, LeftX, ref y);
 
+            // Right column: Steam Frame only...
             y = TopY;
-            Header(page, "<b>Frame bindings</b>  <size=80%>restart Valheim to apply</size>", RightX, ref y);
+            Header(page, "<b>Frame bindings</b>  <size=80%>restart to apply</size>", ModuleScope.SteamFrame, RightX, ref y);
             Row(page, "Apply binding tweaks", BindingsHooks.Manage, RightX, ref y);
             thumbSensing = Row(page, "Thumb touch sensing", BindingsHooks.ThumbTouchSensing, RightX, ref y);
             Row(page, "Left stick click: sprint", BindingsHooks.SprintToggleOnLeftStickClick, RightX, ref y);
             Row(page, "Right stick click: crouch", BindingsHooks.CrouchOnRightStickClick, RightX, ref y);
             Row(page, "No stick flick sprint/crouch", BindingsHooks.NoStickFlickRunCrouch, RightX, ref y);
-
-            Header(page, "<b>Prompts</b>", RightX, ref y);
-            Row(page, "Button labels", PromptsHooks.ButtonLabels, RightX, ref y);
-            Row(page, "Map hints show Frame buttons", PromptsHooks.MapHints, RightX, ref y);
             Row(page, "Steam Frame detection", Plugin.FrameDetection, RightX, ref y);
+
+            // ...and below it, the extras that have nothing to do with VR.
+            y -= 10f;
+            Header(page, "<b>Servers and map</b>", ModuleScope.Extra, RightX, ref y);
+            Row(page, "Remember server passwords", ServerPasswordsHooks.Remember, RightX, ref y);
+            Row(page, "Forget saved passwords", ServerPasswordsHooks.ForgetAll, RightX, ref y);
+            Row(page, "Share map position on join", MapSharingHooks.SharePositionOnJoin, RightX, ref y);
+            serverNote = Label(page, new Vector2(RightX - 30f, y + 4f), new Vector2(420f, 22f), 12f, TextAlignmentOptions.Center);
         }
 
         private void BuildGuide(Transform page)
@@ -114,19 +125,24 @@ namespace VhvrSteamFrame
             var left = Label(page, new Vector2(-460f, TopY + 10f), new Vector2(290f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
             var right = Label(page, new Vector2(-160f, TopY + 10f), new Vector2(290f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
             var extra = Label(page, new Vector2(140f, TopY + 10f), new Vector2(320f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
+            var profile = GuideProfile;
+            // The buttons come from one controller's binding file, so this part is specific to that controller.
+            string title = $"<size=15><b>{profile.DisplayName} buttons</b></size>  {Badge(ModuleScope.SteamFrame)}\n";
             try
             {
-                var rows = BindingTable.Build(BindingsHooks.ReadCurrent(GuideProfile));
-                left.text = BindingTable.Format(rows, "Left");
-                right.text = BindingTable.Format(rows, "Right");
+                var rows = BindingTable.Build(BindingsHooks.ReadCurrent(profile));
+                left.text = title + BindingTable.Format(rows, "Left");
+                right.text = "<size=15> </size>\n" + BindingTable.Format(rows, "Right");
             }
             catch (Exception e)
             {
-                left.text = "Couldn't read the Frame binding file.";
+                left.text = title + $"Couldn't read the {profile.DisplayName} binding file.";
                 right.text = "";
                 Plugin.Log.LogWarning($"FrameTab: button guide unavailable: {e.Message}");
             }
+            // How the map and chests work is the same on every headset; only the button names come from the profile.
             extra.text =
+                $"<size=15><b>Map and chests</b></size>  {Badge(ModuleScope.AllHeadsets)}\n" +
                 "<b>Big map</b>  <size=85%>(laser on the map)</size>\n" +
                 "Zoom: left D-pad up / down\n" +
                 "Move: hold trigger and drag\n" +
@@ -152,13 +168,13 @@ namespace VhvrSteamFrame
             rect.SetParent(page, false);
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(352f, 198f);
-            rect.anchoredPosition = new Vector2(-300f, 112f);
+            rect.anchoredPosition = new Vector2(-300f, 100f);
             var image = picture.AddComponent<RawImage>();
             image.raycastTarget = false;
             image.texture = PoseTexture();
             if (image.texture == null) picture.SetActive(false);
 
-            var howTo = Label(page, new Vector2(-300f, -95f), new Vector2(360f, 210f), 13f, TextAlignmentOptions.Top);
+            var howTo = Label(page, new Vector2(-300f, -107f), new Vector2(360f, 210f), 13f, TextAlignmentOptions.Top);
             howTo.text =
                 "<b>Recenter pose</b>\n" +
                 "Hold both controllers about 10 cm in front of your eyes, one in front of each eye, " +
@@ -168,7 +184,7 @@ namespace VhvrSteamFrame
                 "Holding the Steam button to recenter does the same when the option on the right is on.";
 
             float y = TopY;
-            Header(page, "<b>Seated / standing</b>", HeightX, ref y);
+            Header(page, "<b>Seated / standing</b>", ModuleScope.AllHeadsets, HeightX, ref y);
             Row(page, "Posture", PostureHooks.Mode, HeightX, ref y);
             Row(page, "Standing eye height (m)", PostureHooks.StandingEyeHeight, HeightX, ref y);
             Row(page, "Seated eye height (m)", PostureHooks.SeatedEyeHeight, HeightX, ref y);
@@ -289,11 +305,22 @@ namespace VhvrSteamFrame
             return parent.childCount > before ? parent.GetChild(parent.childCount - 1).GetComponent<Toggle>() : null;
         }
 
-        private void Header(Transform parent, string text, float columnX, ref float y)
+        private void Header(Transform parent, string text, ModuleScope scope, float columnX, ref float y)
         {
             var label = Label(parent, new Vector2(columnX - 30f, y), new Vector2(420f, 28f), 17f, TextAlignmentOptions.Center);
-            label.text = text;
+            label.text = text + "  " + Badge(scope);
             y -= RowStep;
+        }
+
+        /// <summary>A small coloured tag saying who a section is for. Never below 12 pt: it has to be readable in the headset.</summary>
+        private static string Badge(ModuleScope scope)
+        {
+            switch (scope)
+            {
+                case ModuleScope.SteamFrame: return "<size=12><color=#ffb347><b>STEAM FRAME</b></color></size>";
+                case ModuleScope.Extra: return "<size=12><color=#bbbbbb><b>EXTRA</b></color></size>";
+                default: return "<size=12><color=#8fc7ff><b>ALL HEADSETS</b></color></size>";
+            }
         }
 
         private TMP_Text Label(Transform parent, Vector2 pos, Vector2 size, float fontSize, TextAlignmentOptions alignment, bool topLeftPivot = false)
