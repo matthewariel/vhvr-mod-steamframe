@@ -1,0 +1,17 @@
+# Build output
+bin/
+obj/
+dist/
+*.user
+.vs/
+TestResults/
+
+# Never commit game files, settings or secrets (see docs/MAINTAINING.md)
+backup/
+*.cfg
+*.dat
+*.log
+*.dll
+*.pdb
+*.zip
+*.disabled
