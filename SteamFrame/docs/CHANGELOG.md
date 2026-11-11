@@ -3,7 +3,15 @@
 What changed in each version of Steam Frame for VHVR. The full feature list, compared with plain VHVR, is in
 [FEATURES.md](FEATURES.md). Headset testing status is in [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md).
 
-## 0.3.1 (2026-11-10): built, not yet tested in the headset
+## 0.3.2 (2026-11-10): installed, not yet tested in the headset
+
+### Fixed
+- **Steam Frame tab page buttons** (Settings, Button guide, Recenter & height) were about 80% hidden behind VHVR's tab
+  row, so they couldn't be read or clicked. They now sit just below it, with the status line, the badge legend and
+  each page moved down by 35 px to match. The button guide's columns are 30 px shorter so they still end at the bottom
+  of VHVR's panel, and a unit test checks the guide still fits that height.
+
+## 0.3.1 (2026-11-10): installed, partly tested in the headset (big map hints not yet checked)
 
 ### Fixed
 - **Big map hints:** three labels were wrong, found from the first 0.3.0 play session's log.

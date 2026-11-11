@@ -231,6 +231,21 @@ namespace VhvrSteamFrame.Tests
         }
 
         [Fact]
+        public void Guide_fits_the_tab_without_scrolling()
+        {
+            // The tab's guide columns are 290 px wide and 450 px tall at 13 pt: about 40 characters a line and,
+            // with the page title above, room for 24 lines before the text runs past the bottom of VHVR's panel.
+            const int charsPerLine = 40, maxLines = 24;
+            var rows = PatchedRows();
+            foreach (var hand in new[] { "Left", "Right" })
+            {
+                var plain = System.Text.RegularExpressions.Regex.Replace(BindingTable.Format(rows, hand), "<[^>]+>", "");
+                int lines = plain.TrimEnd('\n').Split('\n').Sum(l => Math.Max(1, (l.Length + charsPerLine - 1) / charsPerLine));
+                Assert.True(lines <= maxLines, $"{hand} guide needs {lines} lines, room for {maxLines}.");
+            }
+        }
+
+        [Fact]
         public void Guide_of_an_empty_document_is_empty()
         {
             Assert.Empty(BindingTable.Build(new JObject()));

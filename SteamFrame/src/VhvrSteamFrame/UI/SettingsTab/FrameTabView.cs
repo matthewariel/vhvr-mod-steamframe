@@ -25,7 +25,14 @@ namespace VhvrSteamFrame
         private const float LeftX = -250f;
         private const float RightX = 250f;
         private const float HeightX = 170f;
-        private const float TopY = 190f; // first row; the status line and the scope legend sit above it
+        // Top to bottom: page buttons, status line, scope legend, then the page itself (first row at TopY). VHVR's own
+        // tab buttons cover the panel above about y = 255 (its rows run from 250 down to -270), so everything starts
+        // below that; at 270 the page buttons were hidden behind the tab row.
+        private const float PageButtonY = 232f;
+        private const float StatusY = 203f;
+        private const float LegendY = 182f;
+        private const float TopY = 155f;
+        private const float GuideHeight = 450f; // TopY + 10 down to -285, the bottom of VHVR's last row
 
         private static readonly string[] PageTitles = { "Settings", "Button guide", "Recenter & height" };
         private static int currentPage;
@@ -44,8 +51,8 @@ namespace VhvrSteamFrame
             this.createElement = createElement;
             this.labelPrefab = labelPrefab;
 
-            status = Label(transform, new Vector2(0f, 238f), new Vector2(900f, 24f), 14f, TextAlignmentOptions.Center);
-            var legend = Label(transform, new Vector2(0f, 217f), new Vector2(940f, 18f), 12f, TextAlignmentOptions.Center);
+            status = Label(transform, new Vector2(0f, StatusY), new Vector2(900f, 24f), 14f, TextAlignmentOptions.Center);
+            var legend = Label(transform, new Vector2(0f, LegendY), new Vector2(940f, 18f), 12f, TextAlignmentOptions.Center);
             legend.text = $"{Badge(ModuleScope.AllHeadsets)} = any VR controller (tested on Steam Frame)   |   " +
                           $"{Badge(ModuleScope.SteamFrame)} = Frame only   |   {Badge(ModuleScope.Extra)} = not VR";
 
@@ -122,9 +129,9 @@ namespace VhvrSteamFrame
 
         private void BuildGuide(Transform page)
         {
-            var left = Label(page, new Vector2(-460f, TopY + 10f), new Vector2(290f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
-            var right = Label(page, new Vector2(-160f, TopY + 10f), new Vector2(290f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
-            var extra = Label(page, new Vector2(140f, TopY + 10f), new Vector2(320f, 480f), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
+            var left = Label(page, new Vector2(-460f, TopY + 10f), new Vector2(290f, GuideHeight), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
+            var right = Label(page, new Vector2(-160f, TopY + 10f), new Vector2(290f, GuideHeight), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
+            var extra = Label(page, new Vector2(140f, TopY + 10f), new Vector2(320f, GuideHeight), 13f, TextAlignmentOptions.TopLeft, topLeftPivot: true);
             var profile = GuideProfile;
             // The buttons come from one controller's binding file, so this part is specific to that controller.
             string title = $"<size=15><b>{profile.DisplayName} buttons</b></size>  {Badge(ModuleScope.SteamFrame)}\n";
@@ -168,13 +175,13 @@ namespace VhvrSteamFrame
             rect.SetParent(page, false);
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(352f, 198f);
-            rect.anchoredPosition = new Vector2(-300f, 100f);
+            rect.anchoredPosition = new Vector2(-300f, TopY - 90f);
             var image = picture.AddComponent<RawImage>();
             image.raycastTarget = false;
             image.texture = PoseTexture();
             if (image.texture == null) picture.SetActive(false);
 
-            var howTo = Label(page, new Vector2(-300f, -107f), new Vector2(360f, 210f), 13f, TextAlignmentOptions.Top);
+            var howTo = Label(page, new Vector2(-300f, TopY - 297f), new Vector2(360f, 210f), 13f, TextAlignmentOptions.Top);
             howTo.text =
                 "<b>Recenter pose</b>\n" +
                 "Hold both controllers about 10 cm in front of your eyes, one in front of each eye, " +
@@ -191,7 +198,7 @@ namespace VhvrSteamFrame
             Row(page, "Steam button recenter re-measures", PostureHooks.RecalibrateOnSteamVRRecenter, HeightX, ref y);
             heightNote = Label(page, new Vector2(HeightX - 30f, y - 14f), new Vector2(420f, 64f), 13f, TextAlignmentOptions.Center);
 
-            var wrist = Label(page, new Vector2(HeightX - 30f, -150f), new Vector2(420f, 70f), 13f, TextAlignmentOptions.Center);
+            var wrist = Label(page, new Vector2(HeightX - 30f, TopY - 340f), new Vector2(420f, 70f), 13f, TextAlignmentOptions.Center);
             wrist.text = "<b>Wrist minimap angle</b>: VRHUD tab > RightWrist > Set (in game). " +
                          "Hold the left trigger and move or tilt the panel, then press Jump to save.";
         }
@@ -276,7 +283,7 @@ namespace VhvrSteamFrame
             var rect = (RectTransform)go.transform;
             rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
             rect.sizeDelta = new Vector2(190f, 30f);
-            rect.anchoredPosition = new Vector2((index - (PageTitles.Length - 1) / 2f) * 205f, 270f);
+            rect.anchoredPosition = new Vector2((index - (PageTitles.Length - 1) / 2f) * 205f, PageButtonY);
             var text = go.GetComponentInChildren<TMP_Text>(true);
             if (text != null)
             {
