@@ -1,12 +1,31 @@
 # In-game checks
 
 What still needs trying in the headset, newest first. Tick items off (or tell Claude) as you go; anything that
-misbehaves, describe it and the next session reads `BepInEx/LogOutput.log` for the details.
+misbehaves, describe it and the next session reads the logs for the details: every game session since 0.3.3 is in
+`BepInEx/SessionLogs/<start time>.log` (`LogOutput.log` only has the latest).
+
+## New in 0.3.3 (installed 2026-11-10, 23:25)
+
+**Log first**
+- [ ] `Steam Frame for VHVR 0.3.3: 10/10 modules active (all on).`
+- [ ] `SessionLogs: this session is also saved to BepInEx/SessionLogs/<start time>.log (keeping the last 50).`
+- [ ] That file starts with BepInEx's own first lines (the preloader), like `LogOutput.log`.
+- [ ] After quitting the game, the file ends with the same lines as `LogOutput.log`.
+- [ ] Start the game a second time: there are two session files, and the first one is unchanged.
+
+**Also installed: a VHVR test build** (not part of this plugin)
+`BepInEx/plugins/ValheimVRMod.dll` is VHVR from Oct 19 (commit `7cde6f5a`, the build that was installed) plus a fix
+for the wrist quick bar's cursor, on VHVR branch `WristQuickBarCursorBehind`. The original DLL is in
+`BepInEx/vhvr-backup/`.
+- [ ] Hold D-pad left/right and move the hand onto the wrist quick bar (Forsaken Power, sit, map...). The red cursor
+      sphere looks the same as on the radial wheel: tinted under the gray square, hidden behind the icon, solid red only
+      outside the square. It no longer covers the map icon.
+- [ ] The radial wheel's cursor looks the same as before.
 
 ## New in 0.3.2 (installed 2026-11-10, 23:04)
 
 **Log first**
-- [ ] `Steam Frame for VHVR 0.3.2: 9/9 modules active (all on).`
+- [ ] `Steam Frame for VHVR 0.3.2: 9/9 modules active (all on).` (0.3.3 is installed now; check its line instead.)
 
 **Steam Frame tab: page buttons** (Settings > VHVR > Steam Frame)
 - [ ] The three page buttons (Settings, Button guide, Recenter & height) sit fully below VHVR's tab row, readable and
