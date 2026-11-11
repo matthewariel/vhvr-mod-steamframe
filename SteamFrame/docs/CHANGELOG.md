@@ -3,6 +3,32 @@
 What changed in each version of Steam Frame for VHVR. The full feature list, compared with plain VHVR, is in
 [FEATURES.md](FEATURES.md). Headset testing status is in [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md).
 
+## 0.3.0 (2026-11-10): installed, not yet tested in the headset
+
+**No gameplay changes.** Every 0.2.0 feature, setting name and default is the same. This version is about where the code
+lives and how it's organised.
+
+### Changed
+- **Moved into the GitHub fork** `matthewariel/vhvr-mod-steamframe`, as its own `SteamFrame/` folder. VHVR's files are
+  untouched, so the fork syncs with VHVR without conflicts. Players install official VHVR plus this plugin's DLL.
+- **Code split by who it's for:** All headsets / Steam Frame / Extras. All-headset code no longer names the Steam Frame;
+  it asks the active controller profile. The Steam Frame is the only profile so far, and all-headset features are
+  tested on Steam Frame only.
+- **Settings tab grouped by scope:** every section header has an **ALL HEADSETS**, **STEAM FRAME** or **EXTRA** badge,
+  with a legend under the status line. All-headset settings are on the left, Frame bindings and detection on the right,
+  extras below them. The button guide is titled after the controller in use.
+- **Startup log:** shows the VHVR version (with a warning when it isn't a tested one) and a `Modules:` line grouped by
+  scope.
+
+### Added
+- **"Share map position on join" row** on the settings tab. The setting (`[Map] SharePositionOnJoin`) already existed;
+  it just had no row.
+- **Unit tests** for all the pure rules (77 tests), run automatically on GitHub without game files.
+- **VHVR compatibility checker** (`scripts\Check-VhvrCompat.ps1`): checks an installed VHVR and Valheim against
+  everything the plugin reaches into, without starting the game.
+- **Scripts** to build, test, install (with a backup of the previous DLL) and package the plugin.
+- **Docs:** [ARCHITECTURE.md](ARCHITECTURE.md), [MAINTAINING.md](MAINTAINING.md), [UPSTREAM-NOTES.md](UPSTREAM-NOTES.md).
+
 ## 0.2.0 (2026-11-09): installed, not yet tested in the headset
 
 ### Added

@@ -5,8 +5,9 @@
 SteamVR setting. This file lists everything it adds or changes compared to plain VHVR. Version history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-- **Version:** 0.2.0
-- **Built against:** VHVR 0.11.1 (method signatures checked against VHVR master, Nov 2026), BepInEx 5.
+- **Version:** 0.3.0
+- **Built against:** VHVR 0.11.1, BepInEx 5. `scripts\Check-VhvrCompat.ps1` checks any other VHVR version before you
+  play on it.
 - **Requires:** VHVR (hard dependency). Saved server passwords need Windows DPAPI.
 - **Settings:** in game, Settings > VHVR > **Steam Frame** tab, saved with OK. Or edit
   `BepInEx/config/local.vhvr.steamframe.cfg`.
@@ -14,27 +15,58 @@ SteamVR setting. This file lists everything it adds or changes compared to plain
 Status legend: **Confirmed** = tried in the headset and working; **Untested** = built and logic-tested, not yet tried in
 the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 
+Scope legend (the same badges appear on the in-game tab):
+
+| Scope | Meaning |
+|---|---|
+| **All headsets** | Works with any VR controller VHVR supports. **Tested on Steam Frame only.** |
+| **Steam Frame** | Only for Steam Frame controllers. |
+| **Extra** | Not about VR; a convenience that lives in this plugin. |
+
 ## At a glance
 
-| Area | Plain VHVR | With this plugin | Status |
-|---|---|---|---|
-| Button prompts | Keyboard prompts in VR (`[E] Pick up`) | Gamepad glyphs labelled with the Frame button that does it (trigger, A, D-pad right...) | Confirmed |
-| Big map hints | Xbox map controls (LT/RT zoom, X ping) that don't work with the laser | The Frame buttons that do work with the laser (D-pad zoom, stick-click ping, grip + trigger pin) | Untested |
-| Sprint | Right stick flick up (easy to trigger while turning), or hold Y | Left stick click toggles sprint; hold Y still works | Confirmed |
-| Crouch | Right stick flick down | Right stick click toggles crouch; optional double-click | Confirmed (single click) |
-| Crouching by accident in chests / map | Every right stick click there also crouched you | Crouch is ignored while a chest, menu, store or the big map is open | Untested |
-| Chest buttons "Place stacks" / "Take all" | Don't respond to the Frame | Right / left stick click | Confirmed |
-| Bare-hand punch | Grip for creatures; grip + trigger + laser off for trees, rocks, bushes | Checkboxes: grip / trigger / thumb resting on the stick (default grip + thumb), same rule for everything, with a warning when too loose | Confirmed (one hand) |
-| Seated play | Recentering while seated makes you chest-height to other players | Auto seated/standing: seated, you keep your standing height | Confirmed |
-| Steam button recenter | Re-centres the view but doesn't re-measure your height | Also does VHVR's recenter and height measurement | Confirmed (event seen) |
-| Recenter pose | Not explained anywhere in game | Picture and instructions on the Steam Frame tab | Untested |
-| Settings | Frame-specific settings don't exist | A "Steam Frame" tab in VHVR's settings: settings, button guide, recenter & height | Confirmed (0.1 tab); pages untested |
-| Server passwords | Typed with the virtual keyboard on every join | Remembered after a successful join (encrypted), filled in next time | Untested |
-| Map position sharing | Off unless you tick it on the full map | Turned on each time you join a world | Confirmed |
+| Area | Scope | Plain VHVR | With this plugin | Depends on | Status |
+|---|---|---|---|---|---|
+| Button prompts | All headsets (tested on Steam Frame only) | Keyboard prompts in VR (`[E] Pick up`) | Gamepad glyphs labelled with the button that does it (trigger, A, D-pad right...) | Button names come from the active controller profile (Steam Frame only so far); with no profile, Valheim's own labels | Confirmed |
+| Big map hints | All headsets (tested on Steam Frame only) | Xbox map controls (LT/RT zoom, X ping) that don't work with the laser | The buttons that do work with the laser (D-pad zoom, stick-click ping, grip + trigger pin) | The profile's map labels | Untested |
+| Chest buttons "Place stacks" / "Take all" | All headsets (tested on Steam Frame only) | Don't respond in VR | Right / left stick click | VHVR's crouch and sprint toggles must be on the stick clicks (the Frame binding tweaks do this) | Confirmed |
+| Crouching by accident in chests / map | All headsets (tested on Steam Frame only) | Every crouch-button click there also crouched you | Crouch is ignored while a chest, menu, store or the big map is open; optional double-click | Nothing | Untested |
+| Bare-hand punch | All headsets (tested on Steam Frame only) | Grip for creatures; grip + trigger + laser off for trees, rocks, bushes | Checkboxes: grip / trigger / thumb resting on the stick (default grip + thumb), same rule for everything, with a warning when too loose | Thumb-on-stick needs a stick-touch binding (Frame tweak `ThumbTouchSensing`); ignored otherwise | Confirmed (one hand) |
+| Seated play | All headsets (tested on Steam Frame only) | Recentering while seated makes you chest-height to other players | Auto seated/standing: seated, you keep your standing height | Nothing | Confirmed |
+| Steam button recenter | All headsets, SteamVR (tested on Steam Frame only) | Re-centres the view but doesn't re-measure your height | Also does VHVR's recenter and height measurement | Nothing | Confirmed (event seen) |
+| Recenter pose | All headsets (tested on Steam Frame only) | Not explained anywhere in game | Picture and instructions on the settings tab | Nothing | Untested |
+| Settings tab | All headsets UI (tested on Steam Frame only) | These settings don't exist | A "Steam Frame" tab in VHVR's settings: settings grouped by scope, button guide, recenter & height | The button guide reads the active profile's binding file | Confirmed (0.1 tab); 0.3.0 layout untested |
+| Controller detection | All headsets mechanism (tested on Steam Frame only) | None | Asks SteamVR which controllers are in use and picks a profile | Profiles: Steam Frame | Confirmed |
+| Sprint | **Steam Frame** | Right stick flick up (easy to trigger while turning), or hold Y | Left stick click toggles sprint; hold Y still works | Frame binding file | Confirmed |
+| Crouch button | **Steam Frame** | Right stick flick down | Right stick click toggles crouch | Frame binding file | Confirmed (single click) |
+| Thumb touch sensing | **Steam Frame** | Only "flick up" was sensed | Whole-stick touch is sensed, for the punch requirement | Frame binding file | Confirmed |
+| Server passwords | **Extra** (not VR) | Typed with the virtual keyboard on every join | Remembered after a successful join (encrypted), filled in next time | Windows DPAPI | Untested |
+| Map position sharing | **Extra** (not VR) | Off unless you tick it on the full map | Turned on each time you join a world | Nothing | Confirmed |
+
+## All headsets vs Steam Frame
+
+The code, the docs and the in-game tab all use the same three groups.
+
+- **All headsets.** Prompts, big map hints, chest buttons, the crouch guard, punch requirements, seated/standing with
+  Steam-button recenter, the settings tab and controller detection. None of this code names a headset. Where it needs
+  something controller-specific (which button to show, which binding file to read) it asks the **active controller
+  profile**. With no profile, it does nothing special: prompts fall back to Valheim's own labels.
+  **All of it has only ever been tested on a Steam Frame**, because that's the only headset available. On another
+  headset it should work, but nobody has tried.
+- **Steam Frame.** The binding tweaks (stick clicks for sprint and crouch, no stick-flick sprint/crouch, thumb touch
+  sensing) edit VHVR's Steam Frame binding file and nothing else. The Steam Frame profile holds the Frame's button
+  names. On another headset this part stays idle.
+- **Extra.** Saved server passwords and map position sharing have nothing to do with VR. They're here because they're
+  tedious in a headset.
+
+What another headset would need: one controller profile (button names + binding file name), and optionally its own
+binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
 
 ## Details
 
 ### Steam Frame detection
+*Scope: All headsets mechanism (tested on Steam Frame only). The only profile so far is Steam Frame.*
+
 - Asks SteamVR for each hand's controller type and recognises `frame_controller`. It checks every 2 s until it knows,
   then every 15 s.
 - The result appears at the top of the Steam Frame tab.
@@ -42,6 +74,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
   other settings apply either way.
 
 ### Button prompts (Prompts module)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - **The problem:** Valheim shows keyboard prompts under VR because it only shows gamepad glyphs after real gamepad
   input. VHVR feeds SteamVR actions in a way that doesn't count as gamepad input.
 - **The fix:** only the prompt-text code paths are switched to gamepad mode. Valheim's ~70 other gamepad checks are left
@@ -70,6 +104,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - `PromptOverrides` replaces any label by hand, for example `Use=Right A; AltPlace=Left Grip`.
 
 ### Big map hints (new in 0.2.0)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - Valheim's map hints show its gamepad map controls, which don't apply in VR.
 - While the big map is open, the hints show the Frame controls that work with VHVR's laser on the map:
 
@@ -88,6 +124,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - `[Prompts] FrameMapHints` (on).
 
 ### Frame binding changes (Bindings module)
+*Scope: Steam Frame.*
+
 - **What is edited:** Valheim's copy of VHVR's Steam Frame binding,
   `valheim_Data/StreamingAssets/SteamVR/bindings_frame_controller.json`. The changes reach only Valheim, on Frame
   controllers.
@@ -106,6 +144,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 `ManageFrameBindings` turns all of them off at once and puts VHVR's binding back.
 
 ### Chest buttons (MenuStickClicks module)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - Valheim labels "Place stacks" and "Take all" with stick clicks, which never reach it under VR controls.
 - While the inventory or a chest is open:
   - Right stick click = Place stacks
@@ -113,6 +153,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - `[Menus] StickClickMenuButtons` (on).
 
 ### Crouch guard (new in 0.2.0)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - **Ignore crouch in menus:** on the Frame, the right stick click is both crouch and VHVR's "middle click", which moves
   items in chests and pings on the map. So every click there also crouched you. Now the crouch button is ignored while
   any of these is open:
@@ -130,6 +172,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - It cancels VHVR's crouch toggle after VHVR asks for it, and keeps VHVR's crouch-camera flag in step.
 
 ### Bare-hand punching (Punch module)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - **VHVR's rule is fixed in code:**
   - creatures and training dummies: grip held;
   - trees, rocks, bushes and other objects: grip + trigger with the laser pointer off.
@@ -149,6 +193,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - `Diagnostics` (off) logs why each fist contact did or didn't become a punch.
 
 ### Seated / standing play (Posture module)
+*Scope: All headsets (tested on Steam Frame only).*
+
 - **The VHVR problem:** VHVR puts your view at your measured eye height, clamped to `PlayerMinEyeHeight` /
   `PlayerMaxEyeHeight`, above your character's feet. Recentering while seated makes you about 0.5 m short. The usual
   workaround is raising `PlayerMinEyeHeight`, but that floats your feet when standing.
@@ -167,17 +213,19 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - VHVR's config file isn't modified. With this plugin, `PlayerMinEyeHeight` can stay at its normal value.
 
 ### Steam Frame settings tab (FrameTab module)
+*Scope: All headsets UI (tested on Steam Frame only). The tab is named "Steam Frame" for now.*
+
 - **Where:** a "Steam Frame" tab in VHVR's own settings dialog, built with VHVR's controls, so it looks the same and
   saves with OK (Back discards). The other tab buttons re-centre to make room.
-- **Page: Settings**
-  - punch checkboxes with a live looseness warning;
-  - crouch;
-  - server passwords;
-  - the Frame binding tweaks;
-  - prompt style;
-  - Frame detection.
+- **Scope badges (new in 0.3.0):** every section header carries a coloured badge, **ALL HEADSETS** (blue),
+  **STEAM FRAME** (amber) or **EXTRA** (grey), and a legend under the status line explains them.
+- **Page: Settings**, grouped by scope:
+  - left column, ALL HEADSETS: punch checkboxes with a live looseness warning, crouch, prompts (button labels, map
+    hints);
+  - right column, STEAM FRAME: the Frame binding tweaks and Steam Frame detection;
+  - below that, EXTRA: server passwords and "Share map position on join" (new row in 0.3.0).
 - **Page: Button guide**
-  - what every Frame button and chord does on each hand, read live from the binding file in use;
+  - what every button and chord of the active controller does on each hand, read live from the binding file in use;
   - the big map controls and chest controls;
   - where to change the wrist minimap angle.
 - **Page: Recenter & height**
@@ -190,6 +238,8 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - `[FrameTab] ShowFrameTab` (on).
 
 ### Saved server passwords (ServerPasswords module, new in 0.2.0)
+*Scope: Extra (not VR).*
+
 - **How it saves:** after you join a password-protected server, the password is saved and filled in automatically next
   time. It uses Valheim's own `+password` mechanism, so the password box doesn't appear.
 - **Encryption:** Windows DPAPI, so only your Windows account on this PC can read the saved file.
@@ -199,12 +249,16 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 - Settings: `[Servers] RememberPasswords` (on), `ForgetSavedPasswords`.
 
 ### Map position sharing (MapSharing module)
+*Scope: Extra (not VR).*
+
 - Turns on Valheim's "public position" (other players see you on the map) each time you join a world.
 - The checkbox is hard to reach in VR; you can still untick it on the full map.
 - `[Map] SharePositionOnJoin` (on).
 
 ### Logging
-- One line per module at startup (ready / disabled and why).
+- The VHVR version at startup, with one warning if it isn't a tested one.
+- One line per module at startup (ready / disabled and why), then a summary line (`9/9 modules active`) and a
+  `Modules:` line that groups them: `[all headsets] ... [Steam Frame] ... [extras] ...`.
 - A one-time line when Frame controllers are detected.
 - "Height:" lines for each measurement.
 - Optional punch diagnostics.
@@ -213,39 +267,41 @@ the headset (see [IN-GAME-CHECKS.md](IN-GAME-CHECKS.md)).
 ## Settings reference
 
 File: `BepInEx/config/local.vhvr.steamframe.cfg`. In game: Settings > VHVR > Steam Frame.
+Section names, setting names and defaults are fixed: changing one would silently reset players' settings. "All headsets"
+settings are tested on Steam Frame only.
 
-| Section | Setting | Default | What it does |
-|---|---|---|---|
-| General | FrameDetection | Auto | Auto / Force / Off for Frame-specific labels |
-| General | ImportedOldSettings | false | Internal: settings from the older "VR Gamepad Prompts" plugin were carried over |
-| Prompts | ForceGamepadPrompts | true | Gamepad glyphs in hover text and interaction prompts |
-| Prompts | ForceGamepadMenuHints | true | Gamepad icons next to menu buttons |
-| Prompts | ButtonLabels | Auto | Auto / Frame / Xbox labels |
-| Prompts | PromptOverrides | (empty) | `Action=Label; ...` custom labels |
-| Prompts | FrameMapHints | true | Big map hints show Frame laser controls |
-| Menus | StickClickMenuButtons | true | Stick clicks = Place stacks / Take all in chests |
-| Crouch | BlockCrouchInMenus | true | Ignore crouch in chests, menus and the map |
-| Crouch | DoubleClickToCrouch | false | Crouching needs a double click |
-| Crouch | DoubleClickWindow | 0.45 | Seconds between the two clicks (0.2–1.0) |
-| Map | SharePositionOnJoin | true | Public map position on each join |
-| Servers | RememberPasswords | true | Save server passwords after a successful join |
-| Servers | ForgetSavedPasswords | false | Tick + OK deletes all saved passwords |
-| Punch | RequireGrip | true | Punch needs grip |
-| Punch | RequireTrigger | false | Punch needs trigger |
-| Punch | RequireThumbOnStick | true | Punch needs thumb resting on the stick |
-| Punch | Diagnostics | false | Log why each fist contact did or didn't punch |
-| Posture | Mode | Auto | Auto / Standing / Seated |
-| Posture | StandingEyeHeight | 0 (learned) | Standing eye height in m (0–2.5) |
-| Posture | SeatedEyeHeight | 0 (learned) | Seated eye height in m (0–2.0) |
-| Posture | SeatedBelowPercent | 80 | Seated threshold until the seated height is known (50–95) |
-| Posture | RecalibrateOnSteamVRRecenter | true | Steam button recenter also re-measures height |
-| Posture | LogSteamVREvents | true | Log each SteamVR event type once per session |
-| Bindings | ManageFrameBindings | true | Apply the tweaks below (off = VHVR's binding) |
-| Bindings | ThumbTouchSensing | true | Sense a thumb resting on either stick |
-| Bindings | SprintToggleOnLeftStickClick | true | Left stick click = sprint toggle |
-| Bindings | CrouchOnRightStickClick | true | Right stick click = crouch toggle |
-| Bindings | NoStickFlickRunCrouch | true | No sprint/crouch on right stick flick up/down |
-| FrameTab | ShowFrameTab | true | Add the Steam Frame tab |
+| Section | Setting | Scope | Default | What it does |
+|---|---|---|---|---|
+| General | FrameDetection | All headsets | Auto | Auto / Force / Off for Frame-specific labels |
+| General | ImportedOldSettings | All headsets | false | Internal: settings from the older "VR Gamepad Prompts" plugin were carried over |
+| Prompts | ForceGamepadPrompts | All headsets | true | Gamepad glyphs in hover text and interaction prompts |
+| Prompts | ForceGamepadMenuHints | All headsets | true | Gamepad icons next to menu buttons |
+| Prompts | ButtonLabels | All headsets | Auto | Auto / Frame / Xbox labels |
+| Prompts | PromptOverrides | All headsets | (empty) | `Action=Label; ...` custom labels |
+| Prompts | FrameMapHints | All headsets | true | Big map hints show Frame laser controls |
+| Menus | StickClickMenuButtons | All headsets | true | Stick clicks = Place stacks / Take all in chests |
+| Crouch | BlockCrouchInMenus | All headsets | true | Ignore crouch in chests, menus and the map |
+| Crouch | DoubleClickToCrouch | All headsets | false | Crouching needs a double click |
+| Crouch | DoubleClickWindow | All headsets | 0.45 | Seconds between the two clicks (0.2–1.0) |
+| Map | SharePositionOnJoin | Extra | true | Public map position on each join |
+| Servers | RememberPasswords | Extra | true | Save server passwords after a successful join |
+| Servers | ForgetSavedPasswords | Extra | false | Tick + OK deletes all saved passwords |
+| Punch | RequireGrip | All headsets | true | Punch needs grip |
+| Punch | RequireTrigger | All headsets | false | Punch needs trigger |
+| Punch | RequireThumbOnStick | All headsets | true | Punch needs thumb resting on the stick |
+| Punch | Diagnostics | All headsets | false | Log why each fist contact did or didn't punch |
+| Posture | Mode | All headsets | Auto | Auto / Standing / Seated |
+| Posture | StandingEyeHeight | All headsets | 0 (learned) | Standing eye height in m (0–2.5) |
+| Posture | SeatedEyeHeight | All headsets | 0 (learned) | Seated eye height in m (0–2.0) |
+| Posture | SeatedBelowPercent | All headsets | 80 | Seated threshold until the seated height is known (50–95) |
+| Posture | RecalibrateOnSteamVRRecenter | All headsets | true | Steam button recenter also re-measures height |
+| Posture | LogSteamVREvents | All headsets | true | Log each SteamVR event type once per session |
+| Bindings | ManageFrameBindings | Steam Frame | true | Apply the tweaks below (off = VHVR's binding) |
+| Bindings | ThumbTouchSensing | Steam Frame | true | Sense a thumb resting on either stick |
+| Bindings | SprintToggleOnLeftStickClick | Steam Frame | true | Left stick click = sprint toggle |
+| Bindings | CrouchOnRightStickClick | Steam Frame | true | Right stick click = crouch toggle |
+| Bindings | NoStickFlickRunCrouch | Steam Frame | true | No sprint/crouch on right stick flick up/down |
+| FrameTab | ShowFrameTab | All headsets | true | Add the Steam Frame tab |
 
 ## Files it writes
 
@@ -277,10 +333,14 @@ File: `BepInEx/config/local.vhvr.steamframe.cfg`. In game: Settings > VHVR > Ste
 ## Before a public release
 - Change the plugin GUID from `local.vhvr.steamframe` to a real one (this resets everyone's settings file name, so do it
   before the first release).
-- Add the GPL-3.0 LICENSE file (VHVR is GPL-3.0), and credit VHVR.
+- Licence: the plugin now lives in a fork of VHVR, so VHVR's GPL-3.0 `LICENSE` at the repository root covers it, and
+  `scripts\Package.ps1` puts it in the zip. Credit VHVR in the release notes.
+- Set the repository's GitHub "About" text (it still describes plain VHVR).
+- Decide whether the all-headset modules become a generic tab or a separate plugin, and rename the tab if so (one
+  constant, `TabName`).
 - Decide public defaults:
   - `[Map] SharePositionOnJoin` should probably default to **off**, since sharing your position is a privacy choice;
   - `[Posture] LogSteamVREvents` should default to **off**.
 - Remove the "VR Gamepad Prompts" settings import (`ConfigMigration`), which only matters on this PC.
 - Confirm every "Untested" row above in the headset first.
-- Contributing pieces to VHVR instead: each module's `UPSTREAM.md` and the order in [README.md](README.md).
+- Contributing pieces to VHVR instead (not planned for now): [UPSTREAM-NOTES.md](UPSTREAM-NOTES.md).
