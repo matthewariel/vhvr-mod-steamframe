@@ -5,7 +5,7 @@
 SteamVR setting. This file lists everything it adds or changes compared to plain VHVR. Version history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-- **Version:** 0.3.0
+- **Version:** 0.3.1
 - **Built against:** VHVR 0.11.1, BepInEx 5. `scripts\Check-VhvrCompat.ps1` checks any other VHVR version before you
   play on it.
 - **Requires:** VHVR (hard dependency). Saved server passwords need Windows DPAPI.

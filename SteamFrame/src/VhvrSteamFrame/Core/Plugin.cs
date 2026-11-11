@@ -19,7 +19,7 @@ namespace VhvrSteamFrame
     {
         public const string Guid = "local.vhvr.steamframe";
         public const string Name = "Steam Frame for VHVR";
-        public const string Version = "0.3.0";
+        public const string Version = "0.3.1";
         public const string VhvrGuid = "org.bepinex.plugins.valheimvrmod";
 
         internal static ManualLogSource Log;
