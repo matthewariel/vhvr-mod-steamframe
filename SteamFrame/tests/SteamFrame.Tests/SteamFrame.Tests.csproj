@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Unit tests for the pure rules in src/Policies. They need no game files, so they also run on GitHub (CI).
+    The rules are compiled in directly (not referenced through the plugin DLL, which needs Valheim to build).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>VhvrSteamFrame.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Policies\**\*.cs" LinkBase="Policies" />
+    <!-- The plugin's Windows password encryption: plain P/Invoke, so it can be tested here too (Windows only). -->
+    <Compile Include="..\..\src\VhvrSteamFrame\Modules\ServerPasswords\Dpapi.cs" Link="Plugin\Dpapi.cs" />
+    <None Include="fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+</Project>

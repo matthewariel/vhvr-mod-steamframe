@@ -1,7 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Valve.Newtonsoft.Json.Linq;
+#if VHVR_GAME
+using Valve.Newtonsoft.Json.Linq; // the JSON library Valheim ships (SteamVR's copy)
+#else
+using Newtonsoft.Json.Linq;       // tests and the VHVR-compat build use the NuGet package
+#endif
 
 namespace VhvrSteamFrame
 {

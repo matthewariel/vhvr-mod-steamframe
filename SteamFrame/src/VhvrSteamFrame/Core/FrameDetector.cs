@@ -4,18 +4,6 @@ using Valve.VR;
 
 namespace VhvrSteamFrame
 {
-    /// <summary>Pure rule: which SteamVR controller type is a Steam Frame controller.</summary>
-    public static class FrameControllers
-    {
-        /// <summary>SteamVR's controller_type for Steam Frame controllers (see VHVR's actions.json default_bindings).</summary>
-        public const string ControllerType = "frame_controller";
-
-        public static bool IsFrame(string controllerType)
-        {
-            return string.Equals(controllerType, ControllerType, StringComparison.OrdinalIgnoreCase);
-        }
-    }
-
     /// <summary>
     /// Asks SteamVR which controllers are in each hand. Polls until both hands are known (controllers can connect late),
     /// then keeps checking slowly in case they change. Never changes anything in SteamVR.
@@ -55,7 +43,7 @@ namespace VhvrSteamFrame
             string right = Read(ETrackedControllerRole.RightHand);
             if (left == null && right == null) return;
 
-            var state = FrameControllers.IsFrame(left) || FrameControllers.IsFrame(right) ? Result.Frame : Result.Other;
+            var state = SteamFrameProfile.Instance.Matches(left) || SteamFrameProfile.Instance.Matches(right) ? Result.Frame : Result.Other;
             if (state == State && left == LeftType && right == RightType) return;
 
             State = state;

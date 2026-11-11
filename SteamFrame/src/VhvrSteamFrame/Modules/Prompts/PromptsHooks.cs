@@ -27,7 +27,7 @@ namespace VhvrSteamFrame
         private static Dictionary<string, string> overrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         private static Dictionary<string, string> frameLabels;
         private static int frameLabelsKey = -1;
-        private static readonly Dictionary<string, string> mapLabels = PromptsPolicy.FrameMapLabels();
+        private static readonly Dictionary<string, string> mapLabels = SteamFrameProfile.Instance.MapLabels();
 
         // One-time log of what the big map's hints ask for, so labels can be matched to Valheim's exact keys.
         private static readonly HashSet<string> mapKeysSeen = new HashSet<string>();
@@ -236,7 +236,10 @@ namespace VhvrSteamFrame
             int key = (crouch ? 1 : 0) | (sprint ? 2 : 0) | (doubleCrouch ? 4 : 0);
             if (frameLabels == null || key != frameLabelsKey)
             {
-                frameLabels = PromptsPolicy.FrameLabels(crouch, sprint, doubleCrouch);
+                frameLabels = SteamFrameProfile.Instance.PromptLabels(new PromptLabelOptions
+                {
+                    CrouchOnStickClick = crouch, SprintOnStickClick = sprint, DoubleClickCrouch = doubleCrouch,
+                });
                 frameLabelsKey = key;
             }
             return frameLabels;

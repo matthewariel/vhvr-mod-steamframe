@@ -9,9 +9,13 @@
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
     <DebugType>none</DebugType>
+    <!-- VHVR_GAME: the pure rules use the game's Valve.Newtonsoft.Json instead of the NuGet Newtonsoft.Json. -->
+    <DefineConstants>$(DefineConstants);VHVR_GAME</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The pure rules (no game references) are compiled straight into the plugin DLL: one file to ship. -->
+    <Compile Include="..\Policies\**\*.cs" LinkBase="Policies" />
     <None Include="**\*.md" />
     <EmbeddedResource Include="Assets\recenter_pose.png" LogicalName="VhvrSteamFrame.recenter_pose.png" />
   </ItemGroup>
