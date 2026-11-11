@@ -1,0 +1,26 @@
+<Project>
+  <!--
+    Shared settings for everything under SteamFrame/. This file lives here, not at the repo root, so VHVR's own build
+    never picks it up.
+
+    Game location: same convention as VHVR's csproj (CommonDir = Steam's "common" folder). Override on the command line,
+    e.g.  dotnet build -p:CommonDir="D:\SteamLibrary\steamapps\common\"   or   -p:ValheimDir="D:\Games\Valheim\"
+  -->
+  <PropertyGroup>
+    <!-- The one place the plugin version is written. Plugin.Version (a const, for BepInEx) must match: a unit test checks it. -->
+    <SteamFrameVersion>0.2.0</SteamFrameVersion>
+
+    <CommonDir Condition="'$(CommonDir)' == ''">C:\Program Files (x86)\Steam\steamapps\common\</CommonDir>
+    <CommonDir>$([MSBuild]::EnsureTrailingSlash('$(CommonDir)'))</CommonDir>
+    <ValheimDir Condition="'$(ValheimDir)' == ''">$(CommonDir)Valheim\</ValheimDir>
+    <ValheimDir>$([MSBuild]::EnsureTrailingSlash('$(ValheimDir)'))</ValheimDir>
+    <ManagedDir>$(ValheimDir)valheim_Data\Managed\</ManagedDir>
+    <BepInExDir>$(ValheimDir)BepInEx\</BepInExDir>
+
+    <!-- Build against the installed official VHVR (what players run), not this repo's VHVR source. -->
+    <VhvrDll Condition="'$(VhvrDll)' == ''">$(BepInExDir)plugins\ValheimVRMod.dll</VhvrDll>
+
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+  </PropertyGroup>
+</Project>
