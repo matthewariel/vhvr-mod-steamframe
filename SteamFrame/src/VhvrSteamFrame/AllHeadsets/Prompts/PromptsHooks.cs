@@ -42,26 +42,11 @@ namespace VhvrSteamFrame
         private static bool mapReported;
         private float mapOpenSince = -1f;
 
-        // Display-only methods: their IsGamepadActive() calls get rewritten, nothing else changes.
-        private static readonly (string type, string method)[] PromptMethods =
-        {
-            ("Localization", "Translate"),    // every $KEY_Xxx token in hover text and UI strings
-            ("Hud", "UpdateCrosshair"),       // tidies brackets around gamepad glyphs in hover text
-            ("Tameable", "GetHoverText"),     // picks gamepad vs keyboard wording for combos
-            ("Sadle", "GetHoverText"),
-            ("Pet", "GetHoverText"),
-            ("ItemStand", "GetHoverText"),
-            ("CookingStation", "HoverText"),
-        };
-
-        private static readonly (string type, string method)[] MenuHintMethods =
-        {
-            ("UIInputHint", "UpdateInputHints"), // the little button icons next to menu buttons
-        };
-
-        private static readonly MethodInfo ZIsGamepadActive = AccessTools.Method(typeof(ZInput), nameof(ZInput.IsGamepadActive));
-        private static readonly MethodInfo ZGamepadActiveGetter = AccessTools.PropertyGetter(typeof(ZInput), nameof(ZInput.GamepadActive));
-        private static readonly MethodInfo ZIsMouseActive = AccessTools.Method(typeof(ZInput), nameof(ZInput.IsMouseActive));
+        // The display-only methods whose IsGamepadActive() calls get rewritten (nothing else changes) are listed in
+        // VhvrApi.PromptTextMethods and VhvrApi.MenuHintMethods.
+        private static readonly MethodInfo ZIsGamepadActive = Vhvr.TryMethod(VhvrApi.ZInputIsGamepadActive);
+        private static readonly MethodInfo ZGamepadActiveGetter = Vhvr.TryMethod(VhvrApi.ZInputGamepadActive);
+        private static readonly MethodInfo ZIsMouseActive = Vhvr.TryMethod(VhvrApi.ZInputIsMouseActive);
 
         public override void BindConfig(ConfigFile config)
         {
@@ -87,10 +72,10 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            int patched = PatchAll(harmony, PromptMethods, nameof(PromptTranspiler)) + PatchAll(harmony, MenuHintMethods, nameof(MenuHintTranspiler));
+            int patched = PatchAll(harmony, VhvrApi.PromptTextMethods, nameof(PromptTranspiler)) +
+                          PatchAll(harmony, VhvrApi.MenuHintMethods, nameof(MenuHintTranspiler));
 
-            var translate = AccessTools.Method(AccessTools.TypeByName("Localization"), "Translate", new[] { typeof(string) });
-            if (translate == null) throw new MissingMemberException("Localization.Translate(string) not found");
+            var translate = Vhvr.Method(VhvrApi.LocalizationTranslate);
             harmony.Patch(translate, prefix: new HarmonyMethod(typeof(PromptsHooks), nameof(TranslatePrefix)));
 
             if (overrides.Count > 0)
@@ -98,12 +83,13 @@ namespace VhvrSteamFrame
             Plugin.Log.LogInfo($"Prompts: {patched} prompt methods patched.");
         }
 
-        private static int PatchAll(Harmony harmony, (string type, string method)[] targets, string transpiler)
+        private static int PatchAll(Harmony harmony, ApiEntry[] targets, string transpiler)
         {
             int count = 0;
-            foreach (var (typeName, methodName) in targets)
+            foreach (var target in targets)
             {
-                var type = AccessTools.TypeByName(typeName);
+                string typeName = target.Type, methodName = target.Member;
+                var type = Vhvr.TryType(target);
                 var methods = type == null
                     ? new List<MethodInfo>()
                     : AccessTools.GetDeclaredMethods(type).Where(m => m.Name == methodName && m.GetMethodBody() != null).ToList();

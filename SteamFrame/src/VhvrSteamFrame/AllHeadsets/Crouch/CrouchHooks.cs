@@ -46,24 +46,22 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            crouchToggled = AccessTools.Field(typeof(Player), "m_crouchToggled");
-            if (crouchToggled == null) throw new MissingMemberException("Player.m_crouchToggled not found (game update?)");
+            crouchToggled = Vhvr.Field(VhvrApi.PlayerCrouchToggled);
 
             try
             {
-                roomscaleSneaking = Vhvr.Delegate<Func<bool>>(Vhvr.Getter(Vhvr.Type("ValheimVRMod.VRCore.VRPlayer"), "isRoomscaleSneaking"));
+                roomscaleSneaking = Vhvr.Delegate<Func<bool>>(Vhvr.Method(VhvrApi.VrPlayerIsRoomscaleSneaking));
             }
             catch (Exception e)
             {
                 roomscaleSneaking = () => false;
                 Plugin.Log.LogWarning($"Crouch: can't tell physical ducking from the button ({e.Message}); double click applies to both.");
             }
-            vhvrJoystickSneaking = AccessTools.Field(AccessTools.TypeByName("ValheimVRMod.Patches.Player_SetControls_SneakPatch"), "_isJoystickSneaking");
+            vhvrJoystickSneaking = Vhvr.TryField(VhvrApi.SneakPatchIsJoystickSneaking);
             if (vhvrJoystickSneaking == null)
                 Plugin.Log.LogWarning("Crouch: VHVR's sneak flag not found; after a blocked click the crouch camera height may lag one toggle.");
 
-            var setControls = AccessTools.Method(typeof(Player), nameof(Player.SetControls));
-            if (setControls == null) throw new MissingMemberException("Player.SetControls not found (game update?)");
+            var setControls = Vhvr.Method(VhvrApi.PlayerSetControls);
             harmony.Patch(setControls, prefix: new HarmonyMethod(typeof(CrouchHooks), nameof(SetControlsPrefix))
             {
                 priority = Priority.Low,

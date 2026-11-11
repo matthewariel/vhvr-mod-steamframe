@@ -38,12 +38,11 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            var settings = Vhvr.Type("ValheimVRMod.VRCore.UI.ConfigSettings");
-            createTab = Vhvr.Method(settings, "CreateTab", typeof(string), typeof(int));
-            createElement = Vhvr.Method(settings, "createElement");
-            togglePrefabField = Vhvr.Field(settings, "togglePrefab");
-            transformButtonPrefabField = AccessTools.Field(settings, "transformButtonPrefab"); // optional: page buttons
-            var fbtTab = Vhvr.Method(settings, "CreateFullBodyTrackingTab", typeof(int));
+            createTab = Vhvr.Method(VhvrApi.SettingsCreateTab);
+            createElement = Vhvr.Method(VhvrApi.SettingsCreateElement);
+            togglePrefabField = Vhvr.Field(VhvrApi.SettingsTogglePrefab);
+            transformButtonPrefabField = Vhvr.TryField(VhvrApi.SettingsTransformButtonPrefab); // optional: page buttons
+            var fbtTab = Vhvr.Method(VhvrApi.SettingsCreateFbtTab);
 
             harmony.Patch(createTab, prefix: new HarmonyMethod(typeof(FrameTabHooks), nameof(BeforeCreateTab)));
             harmony.Patch(fbtTab, postfix: new HarmonyMethod(typeof(FrameTabHooks), nameof(AfterFullBodyTrackingTab)));

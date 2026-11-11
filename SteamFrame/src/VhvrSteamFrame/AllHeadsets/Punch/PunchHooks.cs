@@ -56,14 +56,13 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            var fist = typeof(FistCollision);
-            HandGestureField = Vhvr.Field(fist, "handGesture");
-            LastGrabbedField = Vhvr.Field(fist, "lastGrabbedType");
-            IsRightHandField = Vhvr.Field(fist, "isRightHand");
-            InputSource = Vhvr.Delegate<Func<FistCollision, VRInputSource>>(Vhvr.Getter(fist, "inputSource"));
-            InFirstPerson = Vhvr.Getter(Vhvr.Type("ValheimVRMod.VRCore.VRPlayer"), "inFirstPerson");
+            HandGestureField = Vhvr.Field(VhvrApi.FistHandGesture);
+            LastGrabbedField = Vhvr.Field(VhvrApi.FistLastGrabbedType);
+            IsRightHandField = Vhvr.Field(VhvrApi.FistIsRightHand);
+            InputSource = Vhvr.Delegate<Func<FistCollision, VRInputSource>>(Vhvr.Method(VhvrApi.FistInputSource));
+            InFirstPerson = Vhvr.Method(VhvrApi.VrPlayerInFirstPerson);
 
-            harmony.Patch(Vhvr.Method(fist, "canAttackWithCollision"),
+            harmony.Patch(Vhvr.Method(VhvrApi.FistCanAttack),
                 postfix: new HarmonyMethod(typeof(PunchHooks), nameof(CanAttackPostfix)));
 
             try { extraHitsReady = ThumbPunch.Init(); }

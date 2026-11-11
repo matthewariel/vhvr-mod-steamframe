@@ -37,20 +37,18 @@ namespace VhvrSteamFrame
 
         internal static bool Init()
         {
-            var t = typeof(FistCollision);
-            inCraftingStationField = Vhvr.Field(typeof(Player), "m_inCraftingStation");
+            inCraftingStationField = Vhvr.Field(VhvrApi.PlayerInCraftingStation);
             // Plain delegates to VHVR's private methods: no IL generation, so nothing for Mono to reject.
-            canAttack = Vhvr.Delegate<Func<FistCollision, bool>>(Vhvr.Method(t, "canAttackWithCollision"));
-            laserActive = Vhvr.Delegate<Func<FistCollision, bool>>(Vhvr.Method(t, "isLaserPointerActive"));
-            tryHit = Vhvr.Delegate<Action<FistCollision, Collider, bool>>(Vhvr.Method(t, "tryHitCollider", typeof(Collider), typeof(bool)));
+            canAttack = Vhvr.Delegate<Func<FistCollision, bool>>(Vhvr.Method(VhvrApi.FistCanAttack));
+            laserActive = Vhvr.Delegate<Func<FistCollision, bool>>(Vhvr.Method(VhvrApi.FistIsLaserPointerActive));
+            tryHit = Vhvr.Delegate<Action<FistCollision, Collider, bool>>(Vhvr.Method(VhvrApi.FistTryHitCollider));
 
             // Diagnostics only; any of these may be missing.
-            try { hasMomentum = Vhvr.Delegate<MomentumFn>(Vhvr.Method(t, "hasMomentum")); } catch { hasMomentum = null; }
-            var vrPlayer = AccessTools.TypeByName("ValheimVRMod.VRCore.VRPlayer");
-            vrPlayerInstance = vrPlayer == null ? null : AccessTools.PropertyGetter(vrPlayer, "instance");
-            swingSpeedRequirement = AccessTools.Method(AccessTools.TypeByName("ValheimVRMod.Utilities.VHVRConfig"), "SwingSpeedRequirement");
-            targetCooldownType = AccessTools.TypeByName("ValheimVRMod.Scripts.AttackTargetMeshCooldown");
-            meshInCooldown = targetCooldownType == null ? null : AccessTools.Method(targetCooldownType, "inCoolDown");
+            try { hasMomentum = Vhvr.Delegate<MomentumFn>(Vhvr.Method(VhvrApi.FistHasMomentum)); } catch { hasMomentum = null; }
+            vrPlayerInstance = Vhvr.TryMethod(VhvrApi.VrPlayerInstance);
+            swingSpeedRequirement = Vhvr.TryMethod(VhvrApi.ConfigSwingSpeedRequirement);
+            targetCooldownType = Vhvr.TryType(VhvrApi.MeshCooldownType);
+            meshInCooldown = Vhvr.TryMethod(VhvrApi.MeshCooldownInCoolDown);
             return true;
         }
 
@@ -133,8 +131,8 @@ namespace VhvrSteamFrame
             return PunchHooks.BaseRefusal(fist);
         }
 
-        private static readonly FieldInfo rightItemField = AccessTools.Field(typeof(Humanoid), "m_rightItem");
-        private static readonly FieldInfo leftItemField = AccessTools.Field(typeof(Humanoid), "m_leftItem");
+        private static readonly FieldInfo rightItemField = Vhvr.TryField(VhvrApi.HumanoidRightItem);
+        private static readonly FieldInfo leftItemField = Vhvr.TryField(VhvrApi.HumanoidLeftItem);
 
         private static string HeldItems(Player player)
         {

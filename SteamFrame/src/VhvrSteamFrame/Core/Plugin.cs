@@ -62,12 +62,32 @@ namespace VhvrSteamFrame
                 imported.Value = true;
             }
 
+            LogVhvrVersion();
             foreach (var m in modules) m.TryStart();
 
             Log.LogInfo($"{Name} {Version}: {modules.Count(m => m.Active)}/{modules.Count} modules active " +
                         $"({string.Join(", ", modules.Where(m => !m.Active).Select(m => m.Name + " off").DefaultIfEmpty("all on"))}).");
             Log.LogInfo($"Modules: [all headsets] {Group(ModuleScope.AllHeadsets)} [Steam Frame] {Group(ModuleScope.SteamFrame)} " +
                         $"[extras] {Group(ModuleScope.Extra)}");
+        }
+
+        /// <summary>Logs the VHVR version in use, with one warning when it isn't one this plugin was played on.</summary>
+        private static void LogVhvrVersion()
+        {
+            try
+            {
+                if (!BepInEx.Bootstrap.Chainloader.PluginInfos.TryGetValue(VhvrGuid, out var vhvr)) return;
+                string version = vhvr.Metadata.Version.ToString();
+                if (VhvrApi.TestedVhvrVersions.Contains(version))
+                    Log.LogInfo($"VHVR {version} (tested with this plugin).");
+                else
+                    Log.LogWarning($"VHVR {version} hasn't been tested with this plugin (tested: {string.Join(", ", VhvrApi.TestedVhvrVersions)}). " +
+                                   "A module whose VHVR internals changed switches itself off; check the lines below.");
+            }
+            catch (Exception e)
+            {
+                Log.LogWarning($"Couldn't read VHVR's version ({e.GetType().Name}).");
+            }
         }
 
         /// <summary>"Prompts, Crouch (off), Punch" for the startup log.</summary>

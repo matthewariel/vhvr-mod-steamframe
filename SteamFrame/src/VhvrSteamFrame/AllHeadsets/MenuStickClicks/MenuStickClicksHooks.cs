@@ -25,8 +25,7 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            var getButtonDown = AccessTools.Method(typeof(ZInput), nameof(ZInput.GetButtonDown), new[] { typeof(string) });
-            if (getButtonDown == null) throw new MissingMemberException("ZInput.GetButtonDown(string) not found");
+            var getButtonDown = Vhvr.Method(VhvrApi.ZInputGetButtonDown);
             harmony.Patch(getButtonDown, postfix: new HarmonyMethod(typeof(MenuStickClicksHooks), nameof(GetButtonDownPostfix)));
         }
 

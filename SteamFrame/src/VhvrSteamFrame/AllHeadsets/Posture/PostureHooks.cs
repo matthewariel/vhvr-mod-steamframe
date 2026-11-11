@@ -81,9 +81,8 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            var vrPlayer = Vhvr.Type("ValheimVRMod.VRCore.VRPlayer");
-            rawEyeHeightField = Vhvr.Field(vrPlayer, "rawCaliberatedEyeHeight");
-            referenceHeightGetter = Vhvr.Getter(vrPlayer, "referencePlayerHeight");
+            rawEyeHeightField = Vhvr.Field(VhvrApi.VrPlayerRawEyeHeight);
+            referenceHeightGetter = Vhvr.Method(VhvrApi.VrPlayerReferenceHeight);
             harmony.Patch(referenceHeightGetter, postfix: new HarmonyMethod(typeof(PostureHooks), nameof(ReferenceHeightPostfix)));
 
             try

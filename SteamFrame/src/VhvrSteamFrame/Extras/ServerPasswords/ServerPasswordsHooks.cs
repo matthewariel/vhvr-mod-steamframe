@@ -26,8 +26,7 @@ namespace VhvrSteamFrame
         private static string FilePath => Path.Combine(Path.Combine(Paths.ConfigPath, "VhvrSteamFrame"), "server-passwords.dat");
 
         private static ServerPasswordStore store = new ServerPasswordStore();
-        private static MethodInfo serverPasswordSetter;
-        private static PropertyInfo serverPasswordProperty;
+        private static MethodInfo serverPasswordSetter, serverPasswordGetter;
 
         private static bool filledFromSaved;   // this handshake used a saved password (cleared by the finalizer)
         private static string filledServer;
@@ -56,13 +55,11 @@ namespace VhvrSteamFrame
 
         protected override void Start(Harmony harmony)
         {
-            serverPasswordProperty = AccessTools.Property(typeof(FejdStartup), "ServerPassword");
-            serverPasswordSetter = serverPasswordProperty?.GetSetMethod(true);
-            if (serverPasswordSetter == null) throw new MissingMemberException("FejdStartup.ServerPassword setter not found (game update?)");
+            serverPasswordSetter = Vhvr.Method(VhvrApi.FejdServerPasswordSet);
+            serverPasswordGetter = Vhvr.Method(VhvrApi.FejdServerPasswordGet);
 
-            var handshake = AccessTools.Method(typeof(ZNet), "RPC_ClientHandshake");
-            var entered = AccessTools.Method(typeof(ZNet), "OnPasswordEntered", new[] { typeof(string) });
-            if (handshake == null || entered == null) throw new MissingMemberException("ZNet password handshake not found (game update?)");
+            var handshake = Vhvr.Method(VhvrApi.ZNetClientHandshake);
+            var entered = Vhvr.Method(VhvrApi.ZNetOnPasswordEntered);
 
             // Fails here (module off) rather than mid-join if DPAPI isn't usable.
             var probe = Dpapi.Unprotect(Dpapi.Protect(new byte[] { 1, 2, 3 }));
@@ -80,7 +77,7 @@ namespace VhvrSteamFrame
         {
             filledFromSaved = false;
             filledServer = null;
-            if (!needPassword || !Remember.Value || serverPasswordProperty.GetValue(null) != null) return;
+            if (!needPassword || !Remember.Value || serverPasswordGetter.Invoke(null, null) != null) return;
 
             string server = ZNet.GetServerString(true);
             if (!store.TryGet(server, Dpapi.Unprotect, out var password)) return;

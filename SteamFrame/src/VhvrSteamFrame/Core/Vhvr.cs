@@ -1,50 +1,90 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using HarmonyLib;
 
 namespace VhvrSteamFrame
 {
     /// <summary>
-    /// Reflection lookups into VHVR (and Valheim) that fail loudly. A missing member throws MissingMemberException naming it,
-    /// which disables only the module that needed it.
+    /// Reflection lookups into VHVR and Valheim, by <see cref="VhvrApi"/> entry. The plain versions fail loudly: a missing
+    /// member throws MissingMemberException naming it, which disables only the module that needed it. The Try versions
+    /// return null instead, for things a module can live without.
     ///
     /// Note: Harmony can't patch VHVR methods that read Valheim's private fields (VHVR is compiled against a publicized
-    /// Valheim, so the patched copy fails to compile). Only patch methods checked to be free of that, and reach anything
-    /// else through plain delegates (no IL generation).
+    /// Valheim, so the patched copy fails to compile). Only patch methods checked to be free of that
+    /// (scripts/Check-VhvrCompat.ps1 checks), and reach anything else through plain delegates (no IL generation).
     /// </summary>
     internal static class Vhvr
     {
-        public static Type Type(string fullName)
+        private static readonly Dictionary<string, Type> types = new Dictionary<string, Type>();
+
+        public static Type TryType(ApiEntry entry)
         {
-            var t = AccessTools.TypeByName(fullName);
-            if (t == null) throw new MissingMemberException($"{fullName} not found (VHVR changed?)");
+            return TypeByName(entry.Type);
+        }
+
+        public static Type Type(ApiEntry entry)
+        {
+            var t = TryType(entry);
+            if (t == null) throw new MissingMemberException($"{entry.Type} not found ({Blame(entry)})");
             return t;
         }
 
-        public static MethodInfo Method(Type type, string name, params Type[] args)
+        /// <summary>A method, property getter or property setter, depending on the entry.</summary>
+        public static MethodInfo TryMethod(ApiEntry entry)
         {
-            var m = args == null || args.Length == 0 ? AccessTools.Method(type, name) : AccessTools.Method(type, name, args);
-            if (m == null) throw new MissingMemberException($"{type.Name}.{name}() not found (VHVR changed?)");
+            var t = TryType(entry);
+            if (t == null) return null;
+            switch (entry.Shape)
+            {
+                case ApiShape.Getter: return AccessTools.PropertyGetter(t, entry.Member);
+                case ApiShape.Setter: return AccessTools.PropertySetter(t, entry.Member);
+                default:
+                    return entry.Parameters == null
+                        ? AccessTools.Method(t, entry.Member)
+                        : AccessTools.Method(t, entry.Member, entry.Parameters.Select(TypeByName).ToArray());
+            }
+        }
+
+        public static MethodInfo Method(ApiEntry entry)
+        {
+            Type(entry);
+            var m = TryMethod(entry);
+            if (m == null) throw new MissingMemberException($"{entry} not found ({Blame(entry)})");
             return m;
         }
 
-        public static MethodInfo Getter(Type type, string property)
+        public static FieldInfo TryField(ApiEntry entry)
         {
-            var m = AccessTools.PropertyGetter(type, property);
-            if (m == null) throw new MissingMemberException($"{type.Name}.{property} not found (VHVR changed?)");
-            return m;
+            var t = TryType(entry);
+            return t == null ? null : AccessTools.Field(t, entry.Member);
         }
 
-        public static FieldInfo Field(Type type, string name)
+        public static FieldInfo Field(ApiEntry entry)
         {
-            var f = AccessTools.Field(type, name);
-            if (f == null) throw new MissingMemberException($"{type.Name}.{name} not found (VHVR changed?)");
+            Type(entry);
+            var f = TryField(entry);
+            if (f == null) throw new MissingMemberException($"{entry} not found ({Blame(entry)})");
             return f;
         }
 
         public static T Delegate<T>(MethodInfo method) where T : System.Delegate
         {
             return (T)System.Delegate.CreateDelegate(typeof(T), method);
+        }
+
+        private static string Blame(ApiEntry entry)
+        {
+            return entry.Assembly == ApiAssembly.Vhvr ? "VHVR changed?" : "game update?";
+        }
+
+        private static Type TypeByName(string fullName)
+        {
+            if (types.TryGetValue(fullName, out var cached)) return cached;
+            var t = AccessTools.TypeByName(fullName);
+            if (t != null) types[fullName] = t; // misses aren't cached: a late-loading plugin could still bring the type
+            return t;
         }
     }
 }

@@ -34,12 +34,11 @@ namespace VhvrSteamFrame
         /// <summary>Throws (MissingMemberException) when VHVR or the SteamVR plugin changed.</summary>
         internal static void Init(Harmony harmony)
         {
-            var vrPlayer = Vhvr.Type("ValheimVRMod.VRCore.VRPlayer");
-            requestRecentering = Vhvr.Method(vrPlayer, "RequestRecentering", typeof(bool));
-            vrPlayerInstance = Vhvr.Getter(vrPlayer, "vrPlayerInstance");
-            requestPelvis = AccessTools.Method(vrPlayer, "RequestPelvisCaliberation");
-            resetRoomscaleCamera = AccessTools.Method(vrPlayer, "ResetRoomscaleCamera");
-            shouldPause = AccessTools.PropertyGetter(vrPlayer, "ShouldPauseMovement");
+            requestRecentering = Vhvr.Method(VhvrApi.VrPlayerRequestRecentering);
+            vrPlayerInstance = Vhvr.Method(VhvrApi.VrPlayerVrPlayerInstance);
+            requestPelvis = Vhvr.TryMethod(VhvrApi.VrPlayerRequestPelvis);
+            resetRoomscaleCamera = Vhvr.TryMethod(VhvrApi.VrPlayerResetRoomscaleCamera);
+            shouldPause = Vhvr.TryMethod(VhvrApi.VrPlayerShouldPauseMovement);
 
             var poll = AccessTools.Method(typeof(Valve.VR.CVRSystem), nameof(Valve.VR.CVRSystem.PollNextEvent),
                 new[] { typeof(Valve.VR.VREvent_t).MakeByRefType(), typeof(uint) });
