@@ -17,10 +17,22 @@ misbehaves, describe it and the next session reads the logs for the details: eve
 `BepInEx/plugins/ValheimVRMod.dll` is VHVR from Oct 19 (commit `7cde6f5a`, the build that was installed) plus a fix
 for the wrist quick bar's cursor, on VHVR branch `WristQuickBarCursorBehind`. The original DLL is in
 `BepInEx/vhvr-backup/`.
-- [ ] Hold D-pad left/right and move the hand onto the wrist quick bar (Forsaken Power, sit, map...). The red cursor
-      sphere looks the same as on the radial wheel: tinted under the gray square, hidden behind the icon, solid red only
-      outside the square. It no longer covers the map icon.
-- [ ] The radial wheel's cursor looks the same as before.
+
+First try (installed 2026-11-10, 23:20), cursor behind the bar:
+- [x] On sit and recenter the red cursor is tinted under the gray square and hidden behind the picture, like the
+      radial wheel.
+- [x] Not good enough on the map: its picture is a solid square filling the tile, so the cursor and the hover
+      highlight were both completely hidden. Same for the black chat square. The cursor also looked set back from the
+      hand.
+
+Second try (installed 2026-11-11, 00:17): the hovered wrist-bar picture is drawn about 60% opaque, and the cursor is
+pushed back along the line of sight so it stays under the hand.
+- [ ] Hover the map: the map picture goes see-through, and the red cursor and the lighter-gray hover square show
+      through it. Moving off it, the map is solid again.
+- [ ] Same on the chat square, power, sit and recenter.
+- [ ] The red cursor sits under the hand, not shifted to one side.
+- [ ] The radial wheel looks the same as before, and its icons never go see-through.
+- [ ] Close the quick menu while hovering a wrist-bar button: that picture is solid again next time the bar shows.
 
 ## New in 0.3.2 (installed 2026-11-10, 23:04)
 
