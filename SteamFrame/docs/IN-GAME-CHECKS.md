@@ -3,10 +3,24 @@
 What still needs trying in the headset, newest first. Tick items off (or tell Claude) as you go; anything that
 misbehaves, describe it and the next session reads `BepInEx/LogOutput.log` for the details.
 
+## New in 0.3.2 (installed 2026-11-10, 23:04)
+
+**Log first**
+- [ ] `Steam Frame for VHVR 0.3.2: 9/9 modules active (all on).`
+
+**Steam Frame tab: page buttons** (Settings > VHVR > Steam Frame)
+- [ ] The three page buttons (Settings, Button guide, Recenter & height) sit fully below VHVR's tab row, readable and
+      clickable. In 0.3.1 they were about 80% hidden behind it.
+- [ ] Under them, in order: the green "Steam Frame controllers detected" line, then the badge legend, then the page.
+      Nothing touches or overlaps.
+- [ ] Each page fits without a scroll bar: Settings ends with the saved-passwords note; Button guide's lists and
+      "Wrist map angle" end above the panel's bottom edge; Recenter & height's picture isn't clipped at the top and
+      the how-to text ends above the bottom edge.
+
 ## New in 0.3.1 (installed 2026-11-10, 22:41)
 
 **Log first**
-- [ ] `Steam Frame for VHVR 0.3.1: 9/9 modules active (all on).`
+- [x] `Steam Frame for VHVR 0.3.1: 9/9 modules active (all on).` (22:48 session)
 
 **Big map hints** (open the big map)
 - [ ] Zoom shows D-pad down / up, not LT / RT.
@@ -19,6 +33,9 @@ misbehaves, describe it and the next session reads `BepInEx/LogOutput.log` for t
 - [ ] The message "Punch: thumb-on-stick can't be sensed..." appeared once, around a moment when one controller
       dropped out. Does punching with grip + thumb on the stick still work, and still refuse without the thumb? If yes,
       it was a false alarm (the 30 s wait before warning is too short for a controller dropout).
+      It showed again in the 0.3.1 session (22:49), soon after the left controller first appeared: at the main menu
+      the log had "left: none", and both Frame controllers were only detected at 22:49:04, after the SteamVR dashboard
+      was opened and closed. Two-hand punch worked in that session.
 - [ ] A seated recenter measured 1.27 m and kept your standing height (1.61 m). Did your in-game height look right?
 
 **For whoever troubleshoots next:** the 0.3.0 session's log (2026-11-10, 20:38 to about 22:30) had no warnings or errors
@@ -65,9 +82,8 @@ The 0.2.0 list below is still open and doubles as that check.
 ## New in 0.2.0 (installed 2026-11-09)
 
 **Steam Frame tab** (Settings > VHVR)
-- [ ] Tab button reads "Steam / Frame" on two lines, like "Motion Control".
 - [ ] Three page buttons along the top (Settings, Button guide, Recenter & height) switch pages; nothing overlaps or
-      runs off the panel edges (the top row and the right-hand column are the likeliest to be cut off).
+      runs off the panel edges. (0.3.1: they were hidden behind VHVR's tab row; moved down in 0.3.2, see above.)
 - [ ] Recenter & height page shows the recenter-pose picture.
 - [ ] Change a setting, press OK, restart Valheim: it stuck. Change one and press Back: it didn't.
 
@@ -80,7 +96,6 @@ The 0.2.0 list below is still open and doubles as that check.
 **Crouch**
 - [ ] In a chest: right stick click does its menu job (move item / place stacks) without crouching you.
 - [ ] On the big map: right stick click pings without crouching you.
-- [ ] Out in the world: right stick click still crouches; clicking again or sprinting stands you up.
 - [ ] Optional: turn on "Double-click to crouch" and check one click does nothing, two quick clicks crouch, one click stands up.
 
 **Big map hints** (open the map from the right wrist)
@@ -89,12 +104,9 @@ The 0.2.0 list below is still open and doubles as that check.
       "Prompts: big map open" lists exactly what the hints asked for, so it can be fixed precisely.
 
 **Server password**
-- [ ] Join your password server once (type it): message "Server password saved for next time" after spawning.
-- [ ] Quit to menu, join again: no password box.
 - [ ] "Forget saved passwords" + OK: next join asks again.
 
 ## Still open from 0.1.0
-- [ ] Two-hand punch (both fists, nothing held). The log only shows right-hand punches so far.
 - [ ] Steam-button recenter while seated keeps your standing height. The log already shows the Steam button sends
       SteamVR's StandingZeroPoseReset and the plugin re-measures on it; what's left is how it feels in the headset.
 - [ ] Build mode, "tilt": hold right grip, push the right stick up / down. The piece should turn to face away from /
@@ -107,6 +119,11 @@ The 0.2.0 list below is still open and doubles as that check.
 - One-hand punch needs grip + thumb on stick: the log shows "needs thumb on stick" refusals and punches when held.
   (The 0.1.0 "thumb-on-stick can't be sensed" message was a false alarm at startup; fixed in 0.2.0.)
 - Prompts, Place stacks / Take all, bow, map sharing.
+- Confirmed in 0.3.1 (2026-11-10):
+  - Tab button reads "Steam / Frame" on two lines.
+  - Out in the world, right stick click crouches; clicking again or sprinting stands you up.
+  - Server password: typed once, "Server password saved for next time"; on the next join, no password box.
+  - Two-hand punch (both fists, nothing held).
 
 ## Not a plugin issue
 - Left middle finger stays half curled: VHVR copies finger poses straight from SteamVR's hand skeleton, the same code
