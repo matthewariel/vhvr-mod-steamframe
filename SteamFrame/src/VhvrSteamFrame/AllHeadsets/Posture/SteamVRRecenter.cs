@@ -31,6 +31,9 @@ namespace VhvrSteamFrame
         private static readonly HashSet<uint> seenEvents = new HashSet<uint>();
         private static bool warnedError;
 
+        /// <summary>When the last SteamVR recenter / chaperone event was seen (unscaled time); -100 before the first.</summary>
+        internal static float LastEventAt = -100f;
+
         /// <summary>Throws (MissingMemberException) when VHVR or the SteamVR plugin changed.</summary>
         internal static void Init(Harmony harmony)
         {
@@ -70,6 +73,7 @@ namespace VhvrSteamFrame
                 pendingEvent = 0;
                 dueEvent = ev;
                 dueAt = Time.unscaledTime + SettleSeconds;
+                LastEventAt = Time.unscaledTime;
             }
 
             if (dueAt < 0f || Time.unscaledTime < dueAt) return;

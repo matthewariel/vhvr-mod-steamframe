@@ -26,9 +26,22 @@ namespace VhvrSteamFrame
         internal static ConfigEntry<bool> MapHints;
 
         // [Prompts] ButtonLabels values. The names are part of the saved settings, so they stay as they are:
-        // "Frame" = always use the forced controller profile's labels, "Auto" = the detected profile's, "Xbox" = Valheim's own.
+        // "Frame" = always use the forced controller profile's labels, "Auto" = the detected profile's, "Xbox" = Valheim's own,
+        // "Keyboard" = don't force gamepad prompts at all: Valheim's keyboard / mouse prompts, as without this plugin.
         private const string LabelsAlways = "Frame";
         private const string LabelsAuto = "Auto";
+        private const string LabelsKeyboard = "Keyboard";
+
+        /// <summary>Button labels set to Keyboard: no gamepad prompts are forced, Valheim decides as it normally would.</summary>
+        internal static bool KeyboardLabels => ButtonLabels != null && ButtonLabels.Value == LabelsKeyboard;
+
+        // The big map's D-pad hint pictures (pin icon picker): they show the D-pad, which does nothing there in VR.
+        private static readonly HashSet<UIGamePad> mapDpadHints = new HashSet<UIGamePad>();
+        // The cross next to the pin icons is a plain picture (not a UIGamePad hint), found by name; its Image is switched
+        // off while hidden. Valheim only switches whole objects on and off, so the Image stays off.
+        private static readonly List<UnityEngine.UI.Graphic> mapDpadPictures = new List<UnityEngine.UI.Graphic>();
+        private static Minimap mapDpadHintsFor;
+        private static bool hideMapDpadHints;
 
         private static Dictionary<string, string> overrides = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
@@ -41,6 +54,7 @@ namespace VhvrSteamFrame
         private static readonly HashSet<string> mapKeysSeen = new HashSet<string>();
         private static bool mapReported;
         private float mapOpenSince = -1f;
+        private bool closeHintChecked;
 
         // The display-only methods whose IsGamepadActive() calls get rewritten (nothing else changes) are listed in
         // VhvrApi.PromptTextMethods and VhvrApi.MenuHintMethods.
@@ -56,15 +70,17 @@ namespace VhvrSteamFrame
                 "Show gamepad button icons next to buttons in menus (crafting, inventory, etc).");
             ButtonLabels = config.Bind("Prompts", "ButtonLabels", "Auto", new ConfigDescription(
                 "Frame: label prompts with the Steam Frame button VHVR binds each action to (Use = trigger, Jump = A, Inventory = D-pad right...). " +
-                "Xbox: Valheim's standard Xbox layout (Use = A), which doesn't match VHVR. Auto: Frame labels when Frame controllers are detected.",
-                new AcceptableValueList<string>("Auto", "Frame", "Xbox")));
+                "Xbox: Valheim's standard Xbox layout (Use = A), which doesn't match VHVR. Auto: Frame labels when Frame controllers are detected. " +
+                "Keyboard: Valheim's own keyboard and mouse prompts ([E] Pick up), as without this plugin, e.g. for flat-screen play.",
+                new AcceptableValueList<string>("Auto", "Frame", "Xbox", LabelsKeyboard)));
             PromptOverrides = config.Bind("Prompts", "PromptOverrides", "",
                 "Optional custom labels that replace a prompt entirely. Format: Action=Label; Action=Label  (e.g. \"Use=Right A; AltPlace=Left Grip\"). " +
                 "Common actions: Use, AltPlace, AltKeys, Remove, Hide, Attack, SecondaryAttack, Block, Jump, Crouch, Run, Inventory, Map. " +
                 "Labels can include TextMeshPro tags, e.g. <sprite=\"xbox\" name=\"button_y\">. These win over ButtonLabels.");
             MapHints = config.Bind("Prompts", "FrameMapHints", true,
                 "On the big map, label the hints with the Frame buttons that work with VHVR's laser (zoom = D-pad up/down, " +
-                "ping = right stick click, pin = grip + trigger, remove = bumper) instead of Valheim's gamepad map controls.");
+                "ping = right stick click, pin = grip + trigger, remove = right bumper, pin icons = trigger) instead of Valheim's " +
+                "gamepad map controls, and add a \"Close map\" hint (Menu button).");
 
             overrides = PromptsPolicy.ParseOverrides(PromptOverrides.Value);
             PromptOverrides.SettingChanged += (_, __) => overrides = PromptsPolicy.ParseOverrides(PromptOverrides.Value);
@@ -77,6 +93,12 @@ namespace VhvrSteamFrame
 
             var translate = Vhvr.Method(VhvrApi.LocalizationTranslate);
             harmony.Patch(translate, prefix: new HarmonyMethod(typeof(PromptsHooks), nameof(TranslatePrefix)));
+
+            var gamePadUpdate = Vhvr.TryMethod(VhvrApi.UIGamePadUpdate);
+            if (gamePadUpdate != null)
+                harmony.Patch(gamePadUpdate, postfix: new HarmonyMethod(typeof(PromptsHooks), nameof(UIGamePadUpdatePostfix)));
+            else
+                Plugin.Log.LogWarning("Prompts: UIGamePad.Update not found; the big map's D-pad hints stay visible.");
 
             if (overrides.Count > 0)
                 Plugin.Log.LogInfo($"Prompt overrides: {string.Join(", ", overrides.Select(kv => kv.Key + "=" + kv.Value))}");
@@ -116,12 +138,20 @@ namespace VhvrSteamFrame
 
         // ---- Replacements for ZInput calls inside the patched methods ----
 
-        public static bool PromptGamepadActive() => ForcePrompts.Value || ZInput.IsGamepadActive();
+        public static bool PromptGamepadActive() => (ForcePrompts.Value && !KeyboardLabels) || ZInput.IsGamepadActive();
 
-        public static bool MenuGamepadActive() => ForceMenuHints.Value || ZInput.IsGamepadActive();
+        public static bool MenuGamepadActive() => (ForceMenuHints.Value && !KeyboardLabels) || ZInput.IsGamepadActive();
 
         // UIInputHint shows a mixed "gamepad + mouse" hint when both are active; hide the mouse half when forcing.
-        public static bool MenuMouseActive() => !ForceMenuHints.Value && ZInput.IsMouseActive();
+        public static bool MenuMouseActive() => (!ForceMenuHints.Value || KeyboardLabels) && ZInput.IsMouseActive();
+
+        // Runs after each gamepad hint picture decides whether to show; hides the big map's D-pad ones while the map is open.
+        public static void UIGamePadUpdatePostfix(UIGamePad __instance)
+        {
+            if (!hideMapDpadHints || __instance == null) return;
+            var hint = __instance.m_hint;
+            if (hint != null && hint.activeSelf && mapDpadHints.Contains(__instance)) hint.SetActive(false);
+        }
 
         public static IEnumerable<CodeInstruction> PromptTranspiler(IEnumerable<CodeInstruction> instructions, MethodBase __originalMethod)
         {
@@ -197,15 +227,29 @@ namespace VhvrSteamFrame
 
         protected override void Tick()
         {
-            if (mapReported) return;
             if (!MapOpen())
             {
                 mapOpenSince = -1f;
+                hideMapDpadHints = false;
                 return;
             }
             float now = UnityEngine.Time.unscaledTime;
-            if (mapOpenSince < 0f) mapOpenSince = now;
-            if (now - mapOpenSince < 1.5f) return;
+            if (mapOpenSince < 0f)
+            {
+                mapOpenSince = now;
+                closeHintChecked = false;
+                FindMapDpadHints();
+                hideMapDpadHints = LabelProfile() != null && MapHints.Value && ForceMenuHints.Value;
+            }
+            foreach (var picture in mapDpadPictures)
+                if (picture != null && picture.enabled == hideMapDpadHints) picture.enabled = !hideMapDpadHints;
+            // A moment after opening, once Valheim has switched the gamepad hint bar on.
+            if (!closeHintChecked && now - mapOpenSince >= 0.3f)
+            {
+                closeHintChecked = true;
+                UpdateCloseHint();
+            }
+            if (mapReported || now - mapOpenSince < 1.5f) return;
 
             mapReported = true;
             var texts = new List<string>();
@@ -220,10 +264,137 @@ namespace VhvrSteamFrame
                                $"Hint texts: {string.Join(" | ", texts.DefaultIfEmpty("none"))}");
         }
 
+        // ---- "Close map" hint ----
+
+        // Valheim's big-map hint bar has no hint for closing the map, so one is added: a copy of the "Add pin" hint entry,
+        // placed after it by the bar's layout group. Without a layout group the copy would sit on top of another hint, so
+        // then nothing is added (and the log says why). Rebuilt when Valheim recreates the map (each world load).
+        private static UnityEngine.GameObject closeHint;
+        private static Minimap closeHintTriedFor;
+
+        private static void UpdateCloseHint()
+        {
+            try
+            {
+                var profile = LabelProfile();
+                string glyph = profile?.MapCloseLabel();
+                bool want = glyph != null && MapHints.Value && ForceMenuHints.Value;
+                if (closeHint != null)
+                {
+                    closeHint.SetActive(want);
+                    return;
+                }
+                if (!want || closeHintTriedFor == Minimap.instance) return;
+                closeHintTriedFor = Minimap.instance;
+
+                foreach (var hint in Minimap.instance.m_hints)
+                {
+                    if (hint == null || !hint.activeInHierarchy) continue;
+                    var add = hint.GetComponentsInChildren<TMPro.TMP_Text>(false).FirstOrDefault(t => t.gameObject.name == "Text - AddPin");
+                    if (add == null) continue;
+
+                    // The entry is the AddPin text's ancestor that sits directly under a layout group.
+                    var entry = add.transform;
+                    while (entry.parent != null && entry.parent.GetComponent<UnityEngine.UI.LayoutGroup>() == null && entry.parent != hint.transform)
+                        entry = entry.parent;
+                    if (entry.parent == null || entry.parent.GetComponent<UnityEngine.UI.LayoutGroup>() == null)
+                    {
+                        Plugin.Log.LogInfo($"Prompts: no \"Close map\" hint: the map's hint bar ({hint.name}) has no layout group, " +
+                                           "so an extra hint would overlap the others.");
+                        return;
+                    }
+
+                    var copy = UnityEngine.Object.Instantiate(entry.gameObject, entry.parent);
+                    copy.name = "SteamFrame CloseMap";
+                    copy.transform.SetSiblingIndex(entry.GetSiblingIndex() + 1);
+                    var texts = copy.GetComponentsInChildren<TMPro.TMP_Text>(true);
+                    var text = texts.FirstOrDefault(t => t.gameObject.name == "Text - AddPin") ?? texts.FirstOrDefault();
+                    if (text == null)
+                    {
+                        UnityEngine.Object.Destroy(copy);
+                        return;
+                    }
+                    text.gameObject.name = "Text - CloseMap";
+                    text.text = $"<mspace=0.6em>{glyph} </mspace>Close map";
+                    closeHint = copy;
+                    Plugin.Log.LogInfo($"Prompts: added a \"Close map\" hint to the big map ({entry.parent.name}).");
+                    return;
+                }
+                Plugin.Log.LogInfo("Prompts: no \"Close map\" hint: couldn't find the map's \"Add pin\" hint to copy.");
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning($"Prompts: couldn't add the \"Close map\" hint: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Collects the big map's gamepad hint pictures for D-pad keys (the pin icon picker shows one), once per map, and
+        /// logs every hint picture the map has so a wrong one can be found by name.
+        /// </summary>
+        private static void FindMapDpadHints()
+        {
+            if (mapDpadHintsFor == Minimap.instance) return;
+            mapDpadHintsFor = Minimap.instance;
+            mapDpadHints.Clear();
+            try
+            {
+                var root = Minimap.instance.m_largeRoot;
+                if (root == null) return;
+                var all = root.GetComponentsInChildren<UIGamePad>(true);
+                foreach (var pad in all)
+                    if (pad != null && pad.m_hint != null && (pad.m_zinputKey ?? "").IndexOf("DPad", StringComparison.OrdinalIgnoreCase) >= 0)
+                        mapDpadHints.Add(pad);
+                Plugin.Log.LogInfo($"Prompts: big map gamepad hint pictures: " +
+                                   $"{string.Join(", ", all.Where(p => p != null).Select(p => $"{p.gameObject.name} ({p.m_zinputKey}{(mapDpadHints.Contains(p) ? ", hidden in VR" : "")})").DefaultIfEmpty("none"))}.");
+
+                // Plain D-pad pictures anywhere on the big map, by object or sprite name.
+                mapDpadPictures.Clear();
+                foreach (var picture in root.GetComponentsInChildren<UnityEngine.UI.Graphic>(true))
+                    if ((picture is UnityEngine.UI.Image || picture is UnityEngine.UI.RawImage) &&
+                        PromptsPolicy.IsDpadPicture(picture.gameObject.name, PictureName(picture)))
+                        mapDpadPictures.Add(picture);
+                Plugin.Log.LogInfo($"Prompts: big map D-pad pictures hidden in VR: " +
+                                   $"{string.Join(", ", mapDpadPictures.Select(Describe).DefaultIfEmpty("none found"))}.");
+
+                // If none matched, list the pictures around the pin icon picker so the cross can be found by name.
+                if (mapDpadPictures.Count == 0 && Minimap.instance.m_selectedIcon0 != null)
+                {
+                    var panel = Minimap.instance.m_selectedIcon0.transform.parent;
+                    if (panel != null && panel.parent != null) panel = panel.parent;
+                    if (panel != null && panel.parent != null) panel = panel.parent;
+                    if (panel != null)
+                        Plugin.Log.LogInfo($"Prompts: pictures around the pin icon picker ({panel.name}): " +
+                                           $"{string.Join(", ", panel.GetComponentsInChildren<UnityEngine.UI.Graphic>(true)
+                                               .Where(g => g is UnityEngine.UI.Image || g is UnityEngine.UI.RawImage).Select(Describe))}.");
+                }
+            }
+            catch (Exception e)
+            {
+                Plugin.Log.LogWarning($"Prompts: couldn't look for the big map's D-pad hints: {e.Message}");
+            }
+        }
+
+        private static string PictureName(UnityEngine.UI.Graphic picture)
+        {
+            if (picture is UnityEngine.UI.Image image) return image.sprite != null ? image.sprite.name : null;
+            if (picture is UnityEngine.UI.RawImage raw) return raw.texture != null ? raw.texture.name : null;
+            return null;
+        }
+
+        // "Panel/Icons/DPad (sprite dpad_updown)", path from the big map's root.
+        private static string Describe(UnityEngine.UI.Graphic picture)
+        {
+            var parts = new List<string>();
+            for (var t = picture.transform; t != null && t.gameObject != Minimap.instance.m_largeRoot; t = t.parent) parts.Insert(0, t.name);
+            return $"{string.Join("/", parts)} (sprite {PictureName(picture) ?? "none"}{(picture.gameObject.activeInHierarchy ? "" : ", not shown now")})";
+        }
+
         /// <summary>The controller profile whose button names the prompts should show, or null for Valheim's own labels.</summary>
         private static ControllerProfile LabelProfile()
         {
             string style = ButtonLabels.Value;
+            if (style == LabelsKeyboard) return null;
             if (style == LabelsAlways) return ControllerDetector.ForcedProfile;
             return style == LabelsAuto ? ControllerDetector.ActiveProfile : null;
         }

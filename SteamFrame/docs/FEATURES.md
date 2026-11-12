@@ -5,7 +5,7 @@
 SteamVR setting. This file lists everything it adds or changes compared to plain VHVR. Version history is in
 [CHANGELOG.md](CHANGELOG.md).
 
-- **Version:** 0.3.3
+- **Version:** 0.5.2
 - **Built against:** VHVR 0.11.1, BepInEx 5. `scripts\Check-VhvrCompat.ps1` checks any other VHVR version before you
   play on it.
 - **Requires:** VHVR (hard dependency). Saved server passwords need Windows DPAPI.
@@ -28,14 +28,14 @@ Scope legend (the same badges appear on the in-game tab):
 | Area | Scope | Plain VHVR | With this plugin | Depends on | Status |
 |---|---|---|---|---|---|
 | Button prompts | All headsets (tested on Steam Frame only) | Keyboard prompts in VR (`[E] Pick up`) | Gamepad glyphs labelled with the button that does it (trigger, A, D-pad right...) | Button names come from the active controller profile (Steam Frame only so far); with no profile, Valheim's own labels | Confirmed |
-| Big map hints | All headsets (tested on Steam Frame only) | Xbox map controls (LT/RT zoom, X ping) that don't work with the laser | The buttons that do work with the laser (D-pad zoom, stick-click ping, grip + trigger pin) | The profile's map labels | Untested |
+| Big map hints | All headsets (tested on Steam Frame only) | Xbox map controls (LT/RT zoom, X ping) that don't work with the laser | The buttons that do work with the laser (D-pad zoom, stick-click ping, grip + trigger pin, RB remove), plus a "Close map" hint | The profile's map labels | Confirmed (0.4.0); 0.5.2 D-pad cross removal untested |
 | Chest buttons "Place stacks" / "Take all" | All headsets (tested on Steam Frame only) | Don't respond in VR | Right / left stick click | VHVR's crouch and sprint toggles must be on the stick clicks (the Frame binding tweaks do this) | Confirmed |
 | Crouching by accident in chests / map | All headsets (tested on Steam Frame only) | Every crouch-button click there also crouched you | Crouch is ignored while a chest, menu, store or the big map is open; optional double-click | Nothing | Untested |
 | Bare-hand punch | All headsets (tested on Steam Frame only) | Grip for creatures; grip + trigger + laser off for trees, rocks, bushes | Checkboxes: grip / trigger / thumb resting on the stick (default grip + thumb), same rule for everything, with a warning when too loose | Thumb-on-stick needs a stick-touch binding (Frame tweak `ThumbTouchSensing`); ignored otherwise | Confirmed (one hand) |
-| Seated play | All headsets (tested on Steam Frame only) | Recentering while seated makes you chest-height to other players | Auto seated/standing: seated, you keep your standing height | Nothing | Confirmed |
+| Seated play | All headsets (tested on Steam Frame only) | Recentering while seated makes you chest-height to other players | Set your standing and seated heights once with buttons; you stay at your standing height whether you sit or stand, switching as you do | Nothing | Confirmed (0.5.1): level with other vikings seated and standing, switching as you move |
 | Steam button recenter | All headsets, SteamVR (tested on Steam Frame only) | Re-centres the view but doesn't re-measure your height | Also does VHVR's recenter and height measurement | Nothing | Confirmed (event seen) |
 | Recenter pose | All headsets (tested on Steam Frame only) | Not explained anywhere in game | Picture and instructions on the settings tab | Nothing | Untested |
-| Settings tab | All headsets UI (tested on Steam Frame only) | These settings don't exist | A "Steam Frame" tab in VHVR's settings: settings grouped by scope, button guide, recenter & height | The button guide reads the active profile's binding file | Confirmed (0.1 tab); 0.3.0 layout untested |
+| Settings tab | All headsets UI (tested on Steam Frame only) | These settings don't exist | A "Steam Frame" tab in VHVR's settings with pages I Settings, II Button guide, III Height | The button guide draws both Frame controllers, reads the binding file in use, and remaps buttons | Confirmed (0.1 tab, 0.3.x layout); 0.4.0 page labels and 0.5.0 button guide untested |
 | Controller detection | All headsets mechanism (tested on Steam Frame only) | None | Asks SteamVR which controllers are in use and picks a profile | Profiles: Steam Frame | Confirmed |
 | Sprint | **Steam Frame** | Right stick flick up (easy to trigger while turning), or hold Y | Left stick click toggles sprint; hold Y still works | Frame binding file | Confirmed |
 | Crouch button | **Steam Frame** | Right stick flick down | Right stick click toggles crouch | Frame binding file | Confirmed (single click) |
@@ -101,7 +101,8 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
   | Build menu | Right bumper |
   | Remove piece | Grip + A |
 
-- `ButtonLabels` = Auto / Frame / Xbox.
+- `ButtonLabels` = Auto / Frame / Xbox / Keyboard. Keyboard (new in 0.5.1) forces nothing: Valheim's own keyboard and
+  mouse prompts, as without this plugin.
 - `PromptOverrides` replaces any label by hand, for example `Use=Right A; AltPlace=Left Grip`.
 
 ### Big map hints (new in 0.2.0)
@@ -115,11 +116,13 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
   | Zoom | Left D-pad up / down |
   | Ping | Right stick click |
   | Add pin | Grip + trigger |
-  | Remove pin | Bumper |
+  | Remove pin | Right bumper |
   | Cross out a pin | Trigger on the pin |
-  | Choose pin icons and filters | Point and pull the trigger |
-  | Close | Map button |
+  | Choose pin icons and filters | Point and pull the trigger (the D-pad cross by the pin icons is hidden, 0.5.2) |
+  | Close | Menu button (right) |
 
+- Valheim has no hint for closing the map, so a "Close map" hint (Menu button) is added at the end of the hint bar
+  (new in 0.4.0; only when the bar lays its hints out automatically, so it can't overlap them).
 - The first time the map opens each session, the log records the exact hint keys Valheim asked for, so any label that
   is still wrong can be fixed.
 - `[Prompts] FrameMapHints` (on).
@@ -143,6 +146,10 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
 | Thumb resting anywhere on either stick | Only "flick up" was sensed (teleport, unused) | Whole-stick touch is sensed, for the thumb-on-stick punch requirement | `ThumbTouchSensing` |
 
 `ManageFrameBindings` turns all of them off at once and puts VHVR's binding back.
+
+**Your own remaps (new in 0.5.0):** buttons changed on the Button guide page are saved in `ButtonRemaps` (for example
+`right/a=dodge;left/bumper=none`) and applied after the tweaks, only while `ManageFrameBindings` is on. **Reset to
+default** empties it.
 
 ### Chest buttons (MenuStickClicks module)
 *Scope: All headsets (tested on Steam Frame only).*
@@ -199,18 +206,29 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
 - **The VHVR problem:** VHVR puts your view at your measured eye height, clamped to `PlayerMinEyeHeight` /
   `PlayerMaxEyeHeight`, above your character's feet. Recentering while seated makes you about 0.5 m short. The usual
   workaround is raising `PlayerMinEyeHeight`, but that floats your feet when standing.
-- **Auto mode (default):**
-  - Each VHVR height measurement is classed as standing or seated.
-  - Seated, you play at your standing eye height.
-  - Both heights are learned from recenters and can also be set by hand.
-  - Once both are known, the split is halfway between them. Until then, below 80% (`SeatedBelowPercent`) of your
-    standing height counts as seated.
-- **Other modes:** Standing (VHVR's behaviour) and Seated (always use the standing height).
+- **Your two heights (new in 0.4.0):** on the tab's III Height page, **Set standing height** (standing up straight) and
+  **Set seated height** (sitting as you play) save the headset's current height. They can also be set with the
+  sliders. Readings that can't be right (not tracking, above 2.2 m, a seated height pressed as standing) are refused.
+  Recenters never change them: until 0.3.x they were learned from every recenter, and one 1.98 m glitch made every
+  standing recenter count as seated afterwards.
+- **Auto mode (default), reworked in 0.5.1:**
+  - Your in-game eyes stay at VHVR's own standing height (your standing reading, clamped to `PlayerMin/MaxEyeHeight`)
+    whether you sit or stand. Only the *gap* between your two heights is used for that, so it's right even when
+    SteamVR's floor is off (on 2026-11-11 the headset read 2.04 m standing; 0.4.0 used that raw and made you too tall).
+  - Each VHVR measurement (recenter) is classed seated if it's below halfway between your heights.
+  - Between recenters it follows your head: rising past 60% of the gap counts as standing up, dropping below 30% as
+    sitting down, each after about a second (a quick duck doesn't count, nor does VHVR's roomscale sneak). The view
+    eases over about a quarter of a second. `SwitchWhenYouSitOrStand` (on); off = only at recenters.
+  - With either height missing, nothing changes, and the first recenter reminds you to set them.
+- **SteamVR's floor:** the Set buttons save SteamVR's floor reference with the heights (`FloorReference`). When it
+  changes (between sessions or at a Steam recenter), or the headset jumps at a Steam recenter, the heights are moved
+  with it, and the log says by how much.
+- **Other modes:** Standing (VHVR's behaviour) and Seated (always play as seated at your standing height).
 - **Steam button recenter:** when SteamVR recenters (`StandingZeroPoseReset`, `SeatedZeroPoseReset` or a chaperone
   change), VHVR's own recenter and height measurement also run. VHVR alone only measures at game start, on the Home key,
   or with its hands-to-eyes pose. Setting: `RecalibrateOnSteamVRRecenter` (on).
-- **Feedback:** a short message after each recenter ("Seated: keeping your standing height (1.67 m)"), and the last
-  measurement on the tab.
+- **Feedback:** "Seated: playing at your standing height." / "Standing." when it switches, and on the tab: today's
+  heights and whether you're seated or standing now.
 - VHVR's config file isn't modified. With this plugin, `PlayerMinEyeHeight` can stay at its normal value.
 
 ### Steam Frame settings tab (FrameTab module)
@@ -220,21 +238,26 @@ binding tweaks module. See [ARCHITECTURE.md](ARCHITECTURE.md).
   saves with OK (Back discards). The other tab buttons re-centre to make room.
 - **Scope badges (new in 0.3.0):** every section header carries a coloured badge, **ALL HEADSETS** (blue),
   **STEAM FRAME** (amber) or **EXTRA** (grey), and a legend under the status line explains them.
-- **Page: Settings**, grouped by scope:
+- **Page buttons** read **I Settings**, **II Button guide**, **III Height** (new in 0.4.0; they were blank before).
+- **Page I: Settings**, grouped by scope:
   - left column, ALL HEADSETS: punch checkboxes with a live looseness warning, crouch, prompts (button labels, map
     hints);
   - right column, STEAM FRAME: the Frame binding tweaks and Steam Frame detection;
   - below that, EXTRA: server passwords and "Share map position on join" (new row in 0.3.0).
-- **Page: Button guide**
-  - what every button and chord of the active controller does on each hand, read live from the binding file in use;
-  - the big map controls and chest controls;
-  - where to change the wrist minimap angle.
-- **Page: Recenter & height**
+- **Page II: Button guide** (redesigned in 0.5.0, picture redrawn in 0.5.3)
+  - both Steam Frame controllers from above, handles and grip buttons included, with a small side view of each
+    bumper and trigger underneath. A line runs from every button to a box saying what it does, read live from the
+    binding file in use;
+  - click a box to give that button another action (15 to choose from, or Nothing). The trigger, grip and stick
+    movement are fixed, and Menu must stay on some button;
+  - the two-button combinations (grip + ...) between the two handles;
+  - **Reset to default** (two clicks) clears every change.
+- **Page III: Height**
   - a picture of VHVR's recenter pose, with instructions;
   - posture mode;
-  - standing and seated eye heights;
+  - standing and seated eye heights, with **Set standing height** / **Set seated height** buttons;
   - the Steam-button recenter option;
-  - the last measurement and the current seated/standing split.
+  - both heights, the seated/standing split and the last measurement.
 - A status line shows whether Frame controllers were detected and whether a binding change needs a restart.
 - `[FrameTab] ShowFrameTab` (on).
 
@@ -289,7 +312,7 @@ settings are tested on Steam Frame only.
 | General | ImportedOldSettings | All headsets | false | Internal: settings from the older "VR Gamepad Prompts" plugin were carried over |
 | Prompts | ForceGamepadPrompts | All headsets | true | Gamepad glyphs in hover text and interaction prompts |
 | Prompts | ForceGamepadMenuHints | All headsets | true | Gamepad icons next to menu buttons |
-| Prompts | ButtonLabels | All headsets | Auto | Auto / Frame / Xbox labels |
+| Prompts | ButtonLabels | All headsets | Auto | Auto / Frame / Xbox labels, or Keyboard (no gamepad prompts) |
 | Prompts | PromptOverrides | All headsets | (empty) | `Action=Label; ...` custom labels |
 | Prompts | FrameMapHints | All headsets | true | Big map hints show Frame laser controls |
 | Menus | StickClickMenuButtons | All headsets | true | Stick clicks = Place stacks / Take all in chests |
@@ -306,9 +329,10 @@ settings are tested on Steam Frame only.
 | Punch | RequireThumbOnStick | All headsets | true | Punch needs thumb resting on the stick |
 | Punch | Diagnostics | All headsets | false | Log why each fist contact did or didn't punch |
 | Posture | Mode | All headsets | Auto | Auto / Standing / Seated |
-| Posture | StandingEyeHeight | All headsets | 0 (learned) | Standing eye height in m (0–2.5) |
-| Posture | SeatedEyeHeight | All headsets | 0 (learned) | Seated eye height in m (0–2.0) |
-| Posture | SeatedBelowPercent | All headsets | 80 | Seated threshold until the seated height is known (50–95) |
+| Posture | StandingHeight | All headsets | 0 (not set) | Standing eye height in m (0–2.2), set with the tab's button. Replaces 0.3.x's learned `StandingEyeHeight` |
+| Posture | SeatedHeight | All headsets | 0 (not set) | Seated eye height in m (0–2.2), set with the tab's button. Replaces 0.3.x's learned `SeatedEyeHeight` |
+| Posture | FloorReference | All headsets | 0 | Written by the Set buttons: SteamVR's floor reference then. Don't edit |
+| Posture | SwitchWhenYouSitOrStand | All headsets | true | Auto: switch as you sit down / stand up, not only at recenters |
 | Posture | RecalibrateOnSteamVRRecenter | All headsets | true | Steam button recenter also re-measures height |
 | Posture | LogSteamVREvents | All headsets | true | Log each SteamVR event type once per session |
 | Bindings | ManageFrameBindings | Steam Frame | true | Apply the tweaks below (off = VHVR's binding) |

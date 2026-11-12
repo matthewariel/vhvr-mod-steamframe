@@ -18,6 +18,7 @@
     <Compile Include="..\Policies\**\*.cs" LinkBase="Policies" />
     <None Include="**\*.md" />
     <EmbeddedResource Include="Assets\recenter_pose.png" LogicalName="VhvrSteamFrame.recenter_pose.png" />
+    <EmbeddedResource Include="Assets\frame_controllers.png" LogicalName="VhvrSteamFrame.frame_controllers.png" />
   </ItemGroup>
 
   <ItemGroup>

@@ -32,17 +32,24 @@ namespace VhvrSteamFrame
         private static readonly Dictionary<string, string> Friendly = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             { "use", "Use / attack" }, { "grab", "Grab" }, { "jump", "Jump" }, { "dodge", "Dodge" },
-            { "togglerun", "Sprint (toggle)" }, { "holdrun", "Sprint (hold)" }, { "togglecrouch", "Crouch (toggle)" },
+            { "togglerun", "Sprint" }, { "holdrun", "Sprint (hold)" }, { "togglecrouch", "Crouch" },
             { "toggleinventory", "Inventory" }, { "togglemap", "Wrist map" }, { "togglemenu", "Menu" },
-            { "quickswitch", "Quick switch menu" }, { "quickactions", "Quick actions menu (power, map...)" },
+            { "quickswitch", "Quick switch" }, { "quickactions", "Quick actions" },
             { "walk", "Move" }, { "pitchandyaw", "Turn" },
-            { "scrollup", "Scroll up / map zoom in" }, { "scrolldown", "Scroll down / map zoom out" },
-            { "leftclick", "Laser click" }, { "rightclick", "Laser right-click" }, { "middleclick", "Middle click" },
+            { "scrollup", "Scroll up / zoom in" }, { "scrolldown", "Scroll down / zoom out" },
+            { "leftclick", "Laser click" }, { "rightclick", "Laser right-click" }, { "middleclick", "Middle click (ping)" },
             { "removepiece", "Remove build piece" }, { "rotatepiececlockwise", "Rotate piece right" },
-            { "rotatepiececounterclockwise", "Rotate piece left" }, { "facepieceaway", "Tilt piece away" },
-            { "facepiecetoward", "Tilt piece toward" }, { "splitstack", "Split stack" }, { "discarditem", "Quick-move item" },
+            { "rotatepiececounterclockwise", "Rotate piece left" }, { "facepieceaway", "Flip piece front/back" },
+            { "facepiecetoward", "Flip piece front/back" }, { "splitstack", "Split stack" }, { "discarditem", "Quick-move item" },
             { "addmappin", "Add map pin" }, { "teleport", "Thumb on stick (punch sensing)" },
         };
+
+        /// <summary>The name players see for a SteamVR action ("togglecrouch" -> "Crouch (toggle)"); unknown ones as they are.</summary>
+        public static string ActionLabel(string action)
+        {
+            if (string.IsNullOrEmpty(action)) return "";
+            return Friendly.TryGetValue(action, out var f) ? f : action;
+        }
 
         public static List<BindingRow> Build(JObject root)
         {

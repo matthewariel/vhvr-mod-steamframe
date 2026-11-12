@@ -24,9 +24,26 @@ namespace VhvrSteamFrame.Tests
             var map = Frame.MapLabels();
             Assert.Contains("dpad_down", map["LTrigger"]); // "LT / RT  Zoom out/in"
             Assert.Contains("dpad_up", map["RTrigger"]);
-            Assert.Contains("button_lb", map["TabRight"]); // remove pin = bumper
+            Assert.Contains("button_rb", map["TabRight"]); // remove pin = right bumper (confirmed in the headset)
             Assert.Contains("button_rt", map["TabLeft"]);  // cross off pin = trigger
             Assert.Contains("Grip", map["ButtonA"]);       // add pin
+        }
+
+        /// <summary>The 0.3.3 log: the map also asked for D-pad left (pin icon picker) and Y, which fell back to Xbox glyphs.</summary>
+        [Fact]
+        public void Every_map_key_from_the_0_3_3_log_has_a_frame_label()
+        {
+            var map = Frame.MapLabels();
+            foreach (var key in new[] { "DPadLeft", "ButtonY", "LTrigger", "RTrigger", "DPadRight", "ButtonX", "TabRight", "TabLeft", "ButtonA" })
+                Assert.True(map.ContainsKey(key), key + " has no Frame label");
+            Assert.Contains("button_rt", map["DPadLeft"]); // pin icons: point and pull the trigger, not the D-pad
+        }
+
+        [Fact]
+        public void Map_closes_with_the_menu_button()
+        {
+            Assert.Contains("button_start", Frame.MapCloseLabel());
+            Assert.Contains("button_start", Frame.MapLabels()["ButtonB"]);
         }
 
         [Fact]
@@ -218,8 +235,8 @@ namespace VhvrSteamFrame.Tests
         public void Guide_shows_the_stick_click_tweaks()
         {
             var rows = PatchedRows();
-            Assert.Contains(rows, r => r.Hand == "Right" && r.Control == "Stick click" && r.Action == "Crouch (toggle)");
-            Assert.Contains(rows, r => r.Hand == "Left" && r.Control == "Stick click" && r.Action == "Sprint (toggle)");
+            Assert.Contains(rows, r => r.Hand == "Right" && r.Control == "Stick click" && r.Action == "Crouch");
+            Assert.Contains(rows, r => r.Hand == "Left" && r.Control == "Stick click" && r.Action == "Sprint");
         }
 
         [Fact]
@@ -233,9 +250,11 @@ namespace VhvrSteamFrame.Tests
         [Fact]
         public void Guide_fits_the_tab_without_scrolling()
         {
-            // The tab's guide columns are 290 px wide and 450 px tall at 13 pt: about 40 characters a line and,
-            // with the page title above, room for 24 lines before the text runs past the bottom of VHVR's panel.
-            const int charsPerLine = 40, maxLines = 24;
+            // The list the guide falls back to for a controller with no picture: two columns 280 wide and 405 tall
+            // (down to -240, inside the panel's bottom edge) at 12 pt.
+            // Measured in the 0.3.2 headset screenshots at 13 pt: ~6.4 units per character and ~13.6 per line, so at
+            // 12 pt about 47 characters a line and 32 lines. With the page title above and a margin: 44 and 29.
+            const int charsPerLine = 44, maxLines = 29;
             var rows = PatchedRows();
             foreach (var hand in new[] { "Left", "Right" })
             {
@@ -250,6 +269,270 @@ namespace VhvrSteamFrame.Tests
         {
             Assert.Empty(BindingTable.Build(new JObject()));
             Assert.Empty(BindingTable.Build(null));
+        }
+    }
+
+    /// <summary>The Button guide's boxes, remaps and two-button combinations (FrameButtons).</summary>
+    public class FrameButtonsTests
+    {
+        private static JObject Patched()
+        {
+            var doc = Bindings.Load(Repo.OriginalBinding);
+            FrameBindingPatcher.Apply(doc, new FrameBindingOptions());
+            return doc;
+        }
+
+        private static JObject Remapped(params string[] pairs)
+        {
+            var doc = Patched();
+            var remaps = new Dictionary<string, string>();
+            for (int i = 0; i < pairs.Length; i += 2) remaps[pairs[i]] = pairs[i + 1];
+            Assert.Empty(FrameButtons.ApplyRemaps(doc, remaps));
+            return doc;
+        }
+
+        private static FrameButton Button(string id) => FrameButtons.ById(id) ?? throw new Xunit.Sdk.XunitException("no button " + id);
+
+        [Fact]
+        public void Every_box_has_a_unique_id_and_ten_per_controller()
+        {
+            Assert.Equal(10, FrameButtons.Left.Count);
+            Assert.Equal(10, FrameButtons.Right.Count);
+            var ids = FrameButtons.All.Select(b => b.Id).ToList();
+            Assert.Equal(ids.Count, ids.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        }
+
+        [Fact]
+        public void Trigger_grip_and_stick_movement_cannot_be_changed()
+        {
+            foreach (var id in new[] { "left/trigger", "right/trigger", "left/grip", "right/grip", "left/thumbstick/position", "right/thumbstick/position" })
+                Assert.False(Button(id).Remappable, id);
+            Assert.NotNull(FrameButtons.Refusal(Patched(), "right/trigger", "jump"));
+        }
+
+        [Fact]
+        public void Boxes_show_what_the_tweaked_binding_does()
+        {
+            var doc = Patched();
+            Assert.Equal("Jump", FrameButtons.Describe(doc, Button("right/a")));
+            Assert.Equal("Dodge", FrameButtons.Describe(doc, Button("right/x")));
+            Assert.Equal("Wrist map", FrameButtons.Describe(doc, Button("left/view")));
+            Assert.Equal("Sprint", FrameButtons.Describe(doc, Button("left/thumbstick")));
+            Assert.Equal("Middle click (ping) + Crouch", FrameButtons.Describe(doc, Button("right/thumbstick")));
+            Assert.Equal("Use / attack + Laser click", FrameButtons.Describe(doc, Button("right/trigger")));
+            Assert.Equal("Grab", FrameButtons.Describe(doc, Button("left/grip")));
+            Assert.Equal("Move", FrameButtons.Describe(doc, Button("left/thumbstick/position")));
+            Assert.Equal("Turn", FrameButtons.Describe(doc, Button("right/thumbstick/position")));
+        }
+
+        [Fact]
+        public void Every_box_line_fits_its_box()
+        {
+            foreach (var doc in new[] { Patched(), Bindings.Load(Repo.OriginalBinding) })
+                foreach (var b in FrameButtons.All)
+                {
+                    string text = FrameButtons.Describe(doc, b);
+                    Assert.True(text.Length <= FrameButtons.MaxBoxChars, $"{b.Id}: '{text}' is {text.Length} characters, room for {FrameButtons.MaxBoxChars}.");
+                    Assert.True((b.Label + " (fixed)  - changed").Length <= 34, b.Label);
+                }
+        }
+
+        [Fact]
+        public void Too_many_actions_on_one_button_are_counted_not_listed()
+        {
+            var doc = Patched();
+            var sources = (JArray)doc["bindings"]!["/actions/valheim"]!["sources"]!;
+            sources.Add(JObject.Parse("{\"path\":\"/user/hand/right/input/a\",\"mode\":\"button\",\"inputs\":{\"click\":{\"output\":\"/actions/valheim/in/scrolldown\"}}}"));
+            Assert.Equal("Jump +1", FrameButtons.Describe(doc, Button("right/a")));
+        }
+
+        [Fact]
+        public void Remap_gives_a_button_its_new_action_only()
+        {
+            var doc = Remapped("right/a", "dodge");
+            Assert.Equal(new[] { "dodge" }, FrameButtons.ActionsOn(doc, Button("right/a")));
+            var flat = Bindings.Flat(doc);
+            Assert.DoesNotContain(flat, l => l.Contains("right/input/a ") && l.Contains("-> /actions/valheim/in/jump"));
+            // Touch sensing and the grip + A combination stay.
+            Assert.Contains(flat, l => l.Contains("right/input/a button") && l.Contains("touch -> /actions/valheim/in/stopgesturedlocomotion"));
+            Assert.Contains(flat, l => l.Contains("CHORD") && l.Contains("/user/hand/right/input/a:click") && l.Contains("removepiece"));
+        }
+
+        [Fact]
+        public void Remap_to_nothing_leaves_the_button_doing_nothing()
+        {
+            var doc = Remapped("left/bumper", FrameButtons.Nothing);
+            Assert.Empty(FrameButtons.ActionsOn(doc, Button("left/bumper")));
+            Assert.Equal("Nothing", FrameButtons.Describe(doc, Button("left/bumper")));
+            Assert.Contains(Bindings.Flat(doc), l => l.Contains("left/input/bumper button") && l.Contains("click -> /actions/valheim/in/stopgesturedlocomotion"));
+        }
+
+        [Fact]
+        public void Remapping_a_stick_click_keeps_the_stick_moving()
+        {
+            var doc = Remapped("left/thumbstick", "jump", "right/thumbstick", "dodge");
+            Assert.Equal(new[] { "jump" }, FrameButtons.ActionsOn(doc, Button("left/thumbstick")));
+            Assert.Equal(new[] { "dodge" }, FrameButtons.ActionsOn(doc, Button("right/thumbstick")));
+            Assert.Equal("Move", FrameButtons.Describe(doc, Button("left/thumbstick/position")));
+            Assert.Equal("Turn", FrameButtons.Describe(doc, Button("right/thumbstick/position")));
+        }
+
+        [Fact]
+        public void A_button_with_no_action_can_be_given_one()
+        {
+            var doc = Remapped("left/bumper", FrameButtons.Nothing);
+            Assert.Empty(FrameButtons.ApplyRemaps(doc, new Dictionary<string, string> { { "left/bumper", "jump" } }));
+            Assert.Equal(new[] { "jump" }, FrameButtons.ActionsOn(doc, Button("left/bumper")));
+        }
+
+        [Fact]
+        public void Applying_remaps_twice_changes_nothing()
+        {
+            var remaps = new Dictionary<string, string> { { "right/a", "dodge" }, { "right/x", "jump" }, { "left/bumper", "none" }, { "right/thumbstick", "togglemap" } };
+            var once = Patched();
+            FrameButtons.ApplyRemaps(once, remaps);
+            var twice = JObject.Parse(once.ToString());
+            FrameButtons.ApplyRemaps(twice, remaps);
+            Assert.True(JToken.DeepEquals(once, twice));
+        }
+
+        [Fact]
+        public void Bad_remaps_are_reported_and_change_nothing()
+        {
+            var doc = Patched();
+            var problems = FrameButtons.ApplyRemaps(doc, new Dictionary<string, string>
+                { { "right/trigger", "jump" }, { "right/nope", "jump" }, { "right/a", "fly" } });
+            Assert.Equal(3, problems.Count);
+            Assert.True(JToken.DeepEquals(Patched(), doc));
+        }
+
+        [Fact]
+        public void Menu_has_to_stay_on_a_button()
+        {
+            var doc = Patched();
+            Assert.NotNull(FrameButtons.Refusal(doc, "right/menu", "jump"));
+            Assert.NotNull(FrameButtons.Refusal(doc, "right/menu", FrameButtons.Nothing));
+            Assert.Null(FrameButtons.Refusal(doc, "right/a", "togglemenu"));
+            var moved = Remapped("left/view", "togglemenu");
+            Assert.Null(FrameButtons.Refusal(moved, "right/menu", "togglemap"));
+        }
+
+        [Fact]
+        public void Remap_setting_reads_back_what_it_wrote()
+        {
+            var remaps = FrameButtons.ParseRemaps(" Right/A = Dodge ; left/bumper=none;;junk; =x;right/x=");
+            Assert.Equal(2, remaps.Count);
+            Assert.Equal("dodge", remaps["right/a"]);
+            Assert.Equal("none", remaps["left/bumper"]);
+            Assert.Equal("left/bumper=none;right/a=dodge", FrameButtons.FormatRemaps(remaps));
+            Assert.Equal(remaps, FrameButtons.ParseRemaps(FrameButtons.FormatRemaps(remaps)));
+            Assert.Empty(FrameButtons.ParseRemaps(""));
+            Assert.Equal("", FrameButtons.FormatRemaps(new Dictionary<string, string>()));
+        }
+
+        [Fact]
+        public void Every_choice_has_a_name_and_fits_a_picker_button()
+        {
+            Assert.Equal(FrameButtons.Choices.Count, FrameButtons.Choices.Select(c => c.Action).Distinct().Count());
+            foreach (var c in FrameButtons.Choices)
+            {
+                Assert.False(string.IsNullOrEmpty(c.Label));
+                Assert.NotEqual(c.Action, c.Label); // has a readable name, not the raw action
+                // Picker buttons are 150 wide at 13 pt (about 6.4 units a character).
+                Assert.True(c.Label.Length * 6.4 <= FrameGuideLayout.PickerButtonWidth - 8, c.Label);
+            }
+            Assert.Contains(FrameButtons.Choices, c => c.Action == FrameButtons.Nothing);
+        }
+
+        [Fact]
+        public void Two_button_combinations_are_one_line_each()
+        {
+            var lines = FrameButtons.ChordLines(Patched());
+            Assert.Contains("Grip + Trigger: Add map pin / Quick-move item", lines);
+            Assert.Contains("Grip + other Trigger: Split stack", lines);
+            Assert.Contains("Grip + A: Remove build piece", lines);
+            Assert.Contains("Grip + Stick tilt (right): Flip piece / Rotate piece", lines);
+            Assert.Equal(4, lines.Count);
+            Assert.Empty(FrameButtons.ChordLines(new JObject()));
+        }
+    }
+
+    /// <summary>The Button guide page's layout stays inside the panel, and the picture's leader lines meet the boxes.</summary>
+    public class FrameGuideLayoutTests
+    {
+        private static string DrawScript => Path.Combine(Repo.SteamFrameDir, "src", "VhvrSteamFrame", "Assets", "draw_frame_controllers.ps1");
+
+        [Fact]
+        public void Boxes_reset_and_note_stay_inside_the_panel()
+        {
+            int boxes = Math.Max(FrameButtons.Left.Count, FrameButtons.Right.Count);
+            Assert.True(FrameGuideLayout.BoxY(0) + FrameGuideLayout.BoxHeight / 2 <= FrameGuideLayout.TopY);
+            float lastBottom = FrameGuideLayout.BoxY(boxes - 1) - FrameGuideLayout.BoxHeight / 2;
+            float resetTop = FrameGuideLayout.ResetY + Math.Max(FrameGuideLayout.ResetHeight, FrameGuideLayout.NoteHeight) / 2;
+            Assert.True(resetTop <= lastBottom, $"Reset row top {resetTop} overlaps the last box (bottom {lastBottom}).");
+            Assert.True(FrameGuideLayout.ResetY - Math.Max(FrameGuideLayout.ResetHeight, FrameGuideLayout.NoteHeight) / 2 >= FrameGuideLayout.BottomY);
+            Assert.True(FrameGuideLayout.BoxStep >= FrameGuideLayout.BoxHeight + 2, "boxes touch");
+            Assert.Equal(FrameGuideLayout.EdgeX, FrameGuideLayout.ColumnInnerX + FrameGuideLayout.BoxWidth);
+            Assert.True(FrameGuideLayout.EdgeX <= 440f);
+            Assert.True(FrameGuideLayout.BottomY >= -240f && FrameGuideLayout.TopY <= 165f);
+        }
+
+        [Fact]
+        public void Text_is_never_below_12_pt()
+        {
+            foreach (var size in new[] { FrameGuideLayout.BoxNameSize, FrameGuideLayout.BoxActionSize, FrameGuideLayout.NoteSize, FrameGuideLayout.NotesSize })
+                Assert.True(size >= 12, size + " pt");
+        }
+
+        [Fact]
+        public void Picture_and_combinations_stay_between_the_columns()
+        {
+            Assert.True(FrameGuideLayout.PictureWidth / 2 <= FrameGuideLayout.ColumnInnerX);
+            Assert.True(FrameGuideLayout.PictureCentreY + FrameGuideLayout.PictureHeight / 2 <= FrameGuideLayout.TopY);
+            Assert.True(FrameGuideLayout.PictureCentreY - FrameGuideLayout.PictureHeight / 2 >= FrameGuideLayout.BottomY);
+            Assert.True(FrameGuideLayout.NotesWidth / 2 <= FrameGuideLayout.ColumnInnerX);
+
+            // The combination lines: at 13 pt about 6.4 units a character and 13.6 a line (0.3.2 headset screenshots).
+            var lines = FrameButtons.ChordLines(Bindings.Load(Repo.ExpectedPatchedBinding));
+            double perLine = FrameGuideLayout.NotesWidth / 6.4;
+            int rows = lines.Sum(l => (int)Math.Ceiling(l.Length / perLine));
+            Assert.True(rows * 13.6 <= FrameGuideLayout.NotesTopY - FrameGuideLayout.BottomY, $"{rows} lines of combinations don't fit.");
+        }
+
+        [Fact]
+        public void Picker_fits_between_the_columns_above_cancel()
+        {
+            int n = FrameButtons.Choices.Count;
+            for (int i = 0; i < n; i++)
+            {
+                Assert.True(Math.Abs(FrameGuideLayout.PickerX(i)) + FrameGuideLayout.PickerButtonWidth / 2 <= FrameGuideLayout.ColumnInnerX - 5, "choice " + i + " reaches the boxes");
+                Assert.True(FrameGuideLayout.PickerY(i) + FrameGuideLayout.PickerButtonHeight / 2 <= FrameGuideLayout.PickerTitleY - 14, "choice " + i + " overlaps the title");
+            }
+            float lastBottom = FrameGuideLayout.PickerY(n - 1) - FrameGuideLayout.PickerButtonHeight / 2;
+            Assert.True(FrameGuideLayout.CancelY + FrameGuideLayout.PickerButtonHeight / 2 < lastBottom, "Cancel overlaps the choices");
+            Assert.True(FrameGuideLayout.PickerMessageY + FrameGuideLayout.PickerMessageHeight / 2 <= FrameGuideLayout.CancelY - FrameGuideLayout.PickerButtonHeight / 2);
+            Assert.True(FrameGuideLayout.PickerMessageY - FrameGuideLayout.PickerMessageHeight / 2 >= FrameGuideLayout.BottomY);
+            Assert.True(FrameGuideLayout.PickerMessageWidth / 2 <= FrameGuideLayout.ColumnInnerX);
+        }
+
+        [Fact]
+        public void Picture_leader_lines_are_drawn_in_box_order()
+        {
+            // The leader lines are baked into frame_controllers.png by draw_frame_controllers.ps1: its list of buttons and
+            // its box positions must be the page's, or the lines point at the wrong boxes.
+            string script = File.ReadAllText(DrawScript);
+            foreach (var (side, buttons) in new[] { ("Right", FrameButtons.Right), ("Left", FrameButtons.Left) })
+            {
+                var block = System.Text.RegularExpressions.Regex.Match(script, side + @" = @\((.*?)\)\)\s*$",
+                    System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.Multiline);
+                Assert.True(block.Success, "no " + side + " anchor list in the draw script");
+                var names = System.Text.RegularExpressions.Regex.Matches(block.Groups[1].Value, @"@\('([^']+)'").Select(m => m.Groups[1].Value).ToList();
+                Assert.Equal(buttons.Select(b => b.Label).ToList(), names);
+            }
+            Assert.Contains($"{FrameGuideLayout.FirstBoxY:0.##} - {FrameGuideLayout.BoxStep:0.##} * $_", script);
+            Assert.Contains($"$BoxEdge = {FrameGuideLayout.ColumnInnerX:0.##}", script);
+            Assert.Contains($"$Left = {-FrameGuideLayout.PictureWidth / 2:0.##}; $Top = {FrameGuideLayout.TopY:0.##}; $Wt = {FrameGuideLayout.PictureWidth:0.##}; $Ht = {FrameGuideLayout.PictureHeight:0.##}", script);
+            Assert.True(File.Exists(Path.Combine(Path.GetDirectoryName(DrawScript)!, "frame_controllers.png")));
         }
     }
 
@@ -298,7 +581,7 @@ namespace VhvrSteamFrame.Tests
             var rows = BindingTable.Build(doc);
             Assert.True(rows.Count > 10, "Only " + rows.Count + " guide rows.");
             Assert.Contains(rows, r => r.Action == "Jump");
-            Assert.Contains(rows, r => r.Hand == "Right" && r.Control == "Stick click" && r.Action == "Crouch (toggle)");
+            Assert.Contains(rows, r => r.Hand == "Right" && r.Control == "Stick click" && r.Action == "Crouch");
         }
     }
 }

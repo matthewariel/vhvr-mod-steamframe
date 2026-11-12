@@ -47,79 +47,181 @@ namespace VhvrSteamFrame.Tests
 
     public class PostureTests
     {
-        [Fact]
-        public void Low_reading_against_standing_height_is_seated() =>
-            Assert.Equal(Posture.Seated, PostureCalibrator.Classify(1.20f, PostureMode.Auto, 1.67f, 0.8f));
+        // VHVR's [PlayerMinEyeHeight, PlayerMaxEyeHeight] in the user's config.
+        private const float Min = 1.2f, Max = 1.9f;
 
-        [Fact]
-        public void Near_standing_height_is_standing() =>
-            Assert.Equal(Posture.Standing, PostureCalibrator.Classify(1.64f, PostureMode.Auto, 1.67f, 0.8f));
-
-        [Fact]
-        public void Seated_uses_standing_height() =>
-            Assert.Equal(1.67f, PostureCalibrator.ReferenceOverride(Posture.Seated, 1.67f));
-
-        [Fact]
-        public void Standing_leaves_vhvr_alone() =>
-            Assert.True(PostureCalibrator.ReferenceOverride(Posture.Standing, 1.67f) < 0);
-
-        [Fact]
-        public void Unknown_standing_height_is_seated_but_not_overridden()
+        private static PostureTracker Tracker(float standing = 1.53f, float seated = 1.27f)
         {
-            Assert.Equal(Posture.Seated, PostureCalibrator.Classify(1.20f, PostureMode.Auto, 0f, 0.8f));
-            Assert.True(PostureCalibrator.ReferenceOverride(Posture.Seated, 0f) < 0);
+            return new PostureTracker { Standing = standing, Seated = seated };
+        }
+
+        /// <summary>In-game eye height, the way VHVR places it: reference + (head now - anchor).</summary>
+        private static float InGame(PostureTracker t, float vhvrOwn, float head)
+        {
+            float r = t.Reference(Min, Max);
+            return (r > 0f ? r : vhvrOwn) + head - t.Anchor;
         }
 
         [Fact]
-        public void Standing_height_is_learned_only_when_standing()
+        public void Standing_recenter_leaves_vhvr_alone()
         {
-            Assert.True(PostureCalibrator.ShouldLearn(Posture.Standing, PostureMode.Auto, 1.67f));
-            Assert.False(PostureCalibrator.ShouldLearn(Posture.Seated, PostureMode.Auto, 1.2f));
+            var t = Tracker();
+            Assert.Equal(Posture.Standing, t.OnMeasured(1.54f));
+            Assert.True(t.Reference(Min, Max) < 0f);
         }
 
         [Fact]
-        public void Seated_mode_is_always_seated() =>
-            Assert.Equal(Posture.Seated, PostureCalibrator.Classify(1.6f, PostureMode.Seated, 1.67f, 0.8f));
+        public void Seated_recenter_plays_at_standing_height()
+        {
+            var t = Tracker();
+            Assert.Equal(Posture.Seated, t.OnMeasured(1.27f));
+            Assert.Equal(1.53f, InGame(t, 1.27f, 1.27f), 2);
+        }
+
+        /// <summary>2026-11-11, screenshots 1-2: seated recenter, then standing up made the viking comically tall.</summary>
+        [Fact]
+        public void Standing_up_after_a_seated_recenter_switches_and_keeps_the_height()
+        {
+            var t = Tracker();
+            t.OnMeasured(1.27f);
+            Assert.False(t.Update(1.53f, 0f));             // stood up: held for a moment first
+            Assert.True(t.Update(1.53f, 1.1f));            // then it switches
+            Assert.Equal(Posture.Standing, t.Current);
+            Assert.Equal(1.53f, InGame(t, 1.27f, 1.53f), 2);
+        }
 
         [Fact]
-        public void Both_heights_known_splits_halfway() =>
-            Assert.Equal(1.435f, PostureCalibrator.SeatedThreshold(1.67f, 1.20f, 0.8f), 3);
+        public void Sitting_down_after_a_standing_recenter_switches_and_keeps_the_height()
+        {
+            var t = Tracker();
+            t.OnMeasured(1.53f);
+            t.Update(1.27f, 0f);
+            Assert.True(t.Update(1.27f, 1.1f));
+            Assert.Equal(1.53f, InGame(t, 1.53f, 1.27f), 2);
+        }
 
         [Fact]
-        public void Seated_unknown_uses_percentage_of_standing() =>
-            Assert.Equal(1.336f, PostureCalibrator.SeatedThreshold(1.67f, 0f, 0.8f), 3);
+        public void A_quick_duck_does_not_count_as_sitting()
+        {
+            var t = Tracker();
+            t.OnMeasured(1.53f);
+            Assert.False(t.Update(1.27f, 0f));
+            Assert.False(t.Update(1.53f, 0.5f));           // back up before the hold time
+            Assert.False(t.Update(1.27f, 0.6f));
+            Assert.False(t.Update(1.27f, 1.0f));           // the hold starts again
+            Assert.Equal(Posture.Standing, t.Current);
+        }
 
         [Fact]
-        public void Heights_too_close_fall_back_to_percentage() =>
-            Assert.Equal(1.336f, PostureCalibrator.SeatedThreshold(1.67f, 1.60f, 0.8f), 3);
+        public void A_roomscale_sneak_does_not_count_as_sitting()
+        {
+            var t = Tracker();
+            t.OnMeasured(1.53f);
+            t.Update(1.0f, 0f, ducking: true);
+            Assert.False(t.Update(1.0f, 2f, ducking: true));
+        }
+
+        /// <summary>
+        /// 2026-11-11: SteamVR's floor was ~0.5 m off, so the headset read 2.04 m standing and 1.55 m seated, and VHVR's own
+        /// standing reference was clamped to 1.90. Seated, the plugin used 2.04 unclamped: too tall. Now: the clamped 1.90.
+        /// </summary>
+        [Fact]
+        public void A_high_floor_reading_still_gives_vhvrs_clamped_standing_height()
+        {
+            var t = Tracker(2.04f, 1.55f);
+            t.OnMeasured(1.55f);                            // seated
+            Assert.Equal(1.90f, InGame(t, 1.55f, 1.55f), 2);
+            t.Update(2.04f, 0f);
+            t.Update(2.04f, 1.1f);                          // stood up
+            Assert.Equal(1.90f, InGame(t, 1.55f, 2.04f), 2);
+        }
 
         [Fact]
-        public void Only_seated_known_uses_seated_plus_margin() =>
-            Assert.Equal(1.45f, PostureCalibrator.SeatedThreshold(0f, 1.20f, 0.8f), 3);
+        public void Heights_follow_a_floor_shift()
+        {
+            var t = Tracker();
+            t.OnMeasured(1.53f);
+            t.OnFloorShift(0.45f);                          // SteamVR moved the floor: the head now reads 0.45 m higher
+            Assert.Equal(1.98f, t.Standing, 2);
+            Assert.Equal(1.72f, t.Seated, 2);
+            Assert.False(t.Update(1.98f, 0f));              // standing still, reading higher: not a posture change
+            Assert.False(t.Update(1.98f, 2f));
+            Assert.Equal(Posture.Standing, t.Current);
+            Assert.Equal(Posture.Standing, t.OnMeasured(1.98f)); // VHVR re-measures after the shift: still standing
+        }
 
         [Fact]
-        public void Learned_seated_height_catches_a_tall_seat() =>
-            Assert.Equal(Posture.Seated, PostureCalibrator.Classify(1.40f, PostureMode.Auto, 1.67f, 1.20f, 0.8f));
+        public void Setting_heights_reclassifies_the_last_measurement()
+        {
+            var t = new PostureTracker();
+            t.OnMeasured(1.48f);                            // no heights yet: standing
+            t.Standing = 2.04f; t.Seated = 1.55f;
+            t.Reclassify();
+            Assert.Equal(Posture.Seated, t.AnchorPosture);  // below halfway (1.80)
+        }
 
         [Fact]
-        public void Above_the_split_is_standing() =>
-            Assert.Equal(Posture.Standing, PostureCalibrator.Classify(1.50f, PostureMode.Auto, 1.67f, 1.20f, 0.8f));
+        public void Without_both_heights_auto_does_nothing()
+        {
+            var t = Tracker(1.53f, 0f);
+            t.OnMeasured(1.2f);
+            Assert.True(t.Reference(Min, Max) < 0f);
+            Assert.False(t.Update(1.53f, 5f));
+        }
 
         [Fact]
-        public void Seated_height_is_learned_when_seated() =>
-            Assert.True(PostureCalibrator.ShouldLearnSeated(Posture.Seated, PostureMode.Auto, 1.2f, 1.67f));
+        public void Seated_mode_with_only_standing_set_plays_at_it()
+        {
+            var t = new PostureTracker { Mode = PostureMode.Seated, Standing = 1.53f };
+            t.OnMeasured(1.2f);
+            Assert.Equal(1.53f, t.Reference(Min, Max), 2);
+        }
 
         [Fact]
-        public void A_glitch_reading_is_not_learned_as_seated() =>
-            Assert.False(PostureCalibrator.ShouldLearnSeated(Posture.Seated, PostureMode.Auto, 0.4f, 1.67f));
+        public void Standing_mode_never_overrides()
+        {
+            var t = new PostureTracker { Mode = PostureMode.Standing, Standing = 1.53f, Seated = 1.27f };
+            t.OnMeasured(1.27f);
+            Assert.True(t.Reference(Min, Max) < 0f);
+        }
 
         [Fact]
-        public void Forced_seated_mode_does_not_learn_a_standing_reading() =>
-            Assert.False(PostureCalibrator.ShouldLearnSeated(Posture.Seated, PostureMode.Seated, 1.66f, 1.67f));
+        public void Following_the_head_can_be_turned_off()
+        {
+            var t = Tracker();
+            t.FollowHead = false;
+            t.OnMeasured(1.27f);
+            t.Update(1.53f, 0f);
+            Assert.False(t.Update(1.53f, 5f));
+            Assert.Equal(Posture.Seated, t.Current);
+        }
 
         [Fact]
-        public void Seated_height_is_not_learned_from_standing() =>
-            Assert.False(PostureCalibrator.ShouldLearnSeated(Posture.Standing, PostureMode.Auto, 1.6f, 1.67f));
+        public void Sensible_readings_can_be_set()
+        {
+            Assert.Null(PostureCalibrator.RejectReason(Posture.Standing, 1.53f));
+            Assert.Null(PostureCalibrator.RejectReason(Posture.Seated, 1.27f));
+        }
+
+        [Fact]
+        public void Glitch_readings_are_refused()
+        {
+            Assert.NotNull(PostureCalibrator.RejectReason(Posture.Standing, 2.5f));
+            Assert.NotNull(PostureCalibrator.RejectReason(Posture.Seated, 0.4f));
+            Assert.NotNull(PostureCalibrator.RejectReason(Posture.Standing, float.NaN));
+        }
+
+        [Fact]
+        public void A_seated_reading_is_refused_as_standing() =>
+            Assert.Contains("too low for standing", PostureCalibrator.RejectReason(Posture.Standing, 1.2f));
+
+        [Fact]
+        public void Heights_too_close_together_warn()
+        {
+            Assert.NotNull(PostureCalibrator.GapWarning(1.55f, 1.50f));
+            Assert.Null(PostureCalibrator.GapWarning(1.55f, 1.27f));
+            Assert.Null(PostureCalibrator.GapWarning(1.55f, 0f));
+        }
 
         [Fact]
         public void Mode_names_parse()
@@ -198,6 +300,16 @@ namespace VhvrSteamFrame.Tests
             Assert.Equal("MapZoomIn", PromptsPolicy.ActionFromKey("KEY_JoyMapZoomIn"));
             Assert.Equal("ButtonX", PromptsPolicy.ActionFromKey("KEY_ButtonX"));
             Assert.Null(PromptsPolicy.ActionFromKey("piece_workbench"));
+        }
+
+        [Fact]
+        public void Dpad_pictures_are_recognised_by_object_or_sprite_name()
+        {
+            Assert.True(PromptsPolicy.IsDpadPicture("DPad", null));
+            Assert.True(PromptsPolicy.IsDpadPicture("Image", "xbox_D-Pad_updown"));
+            Assert.True(PromptsPolicy.IsDpadPicture("gamepad_d_pad", "UISprite"));
+            Assert.False(PromptsPolicy.IsDpadPicture("Icon0", "mapicon_fire"));
+            Assert.False(PromptsPolicy.IsDpadPicture(null, null));
         }
 
         [Fact]

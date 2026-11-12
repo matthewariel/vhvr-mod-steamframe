@@ -122,6 +122,11 @@ namespace VhvrSteamFrame
         public static readonly ApiEntry VrPlayerRequestPelvis = Vhvr("Posture", VrPlayer, "RequestPelvisCaliberation", ApiShape.Method, ApiKind.Reflect, true);
         public static readonly ApiEntry VrPlayerResetRoomscaleCamera = Vhvr("Posture", VrPlayer, "ResetRoomscaleCamera", ApiShape.Method, ApiKind.Reflect, true);
         public static readonly ApiEntry VrPlayerShouldPauseMovement = Vhvr("Posture", VrPlayer, "ShouldPauseMovement", ApiShape.Getter, ApiKind.Reflect, true);
+        // The [PlayerMinEyeHeight, PlayerMaxEyeHeight] clamp VHVR applies to its reference height; Posture applies the same.
+        public static readonly ApiEntry ConfigPlayerMinEyeHeight = Vhvr("Posture", VhvrConfig, "PlayerMinEyeHeight", ApiShape.Method, ApiKind.Reflect, true);
+        public static readonly ApiEntry ConfigPlayerMaxEyeHeight = Vhvr("Posture", VhvrConfig, "PlayerMaxEyeHeight", ApiShape.Method, ApiKind.Reflect, true);
+        // While VHVR's roomscale sneak (ducking) is on, Posture doesn't take a deep duck for sitting down.
+        public static readonly ApiEntry PostureIsRoomscaleSneaking = Vhvr("Posture", VrPlayer, "isRoomscaleSneaking", ApiShape.Getter, ApiKind.Reflect, true);
 
         // ---- Crouch (AllHeadsets/Crouch) ----
         public static readonly ApiEntry PlayerSetControls = Valheim("Crouch", "Player", "SetControls", ApiShape.Method, ApiKind.HarmonyPatch);
@@ -157,6 +162,9 @@ namespace VhvrSteamFrame
         {
             Valheim("Prompts", "UIInputHint", "UpdateInputHints", ApiShape.Method, ApiKind.HarmonyPatch, true),
         };
+
+        /// <summary>Shows or hides a gamepad hint picture; Prompts hides the big map's D-pad ones (they do nothing in VR).</summary>
+        public static readonly ApiEntry UIGamePadUpdate = Valheim("Prompts", "UIGamePad", "Update", ApiShape.Method, ApiKind.HarmonyPatch, true);
 
         // ---- Settings tab (UI/SettingsTab) ----
         public static readonly ApiEntry SettingsCreateTab = Vhvr("FrameTab", ConfigSettings, "CreateTab", ApiShape.Method, ApiKind.HarmonyPatch, false, Str, Int);

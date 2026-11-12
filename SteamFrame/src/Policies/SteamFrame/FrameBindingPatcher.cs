@@ -84,7 +84,7 @@ namespace VhvrSteamFrame
 
             if (o.NoStickFlickRunCrouch)
             {
-                // Keep the up/down directions defined (the grip + stick up/down "tilt piece" chords need them), but point
+                // Keep the up/down directions defined (the grip + stick up/down "flip piece front/back" chords need them), but point
                 // them at the same harmless action VHVR uses for left/right instead of sprint/crouch.
                 var flick = Find(valheim, Stick("right"), "dpad", "touch");
                 if (flick == null) problems.Add("NoStickFlickRunCrouch: right stick touch-flick binding not found");
@@ -128,7 +128,7 @@ namespace VhvrSteamFrame
             return source;
         }
 
-        private static void SetInput(JObject source, string input, string output)
+        internal static void SetInput(JObject source, string input, string output)
         {
             var inputs = source["inputs"] as JObject;
             if (inputs == null) source["inputs"] = inputs = new JObject();

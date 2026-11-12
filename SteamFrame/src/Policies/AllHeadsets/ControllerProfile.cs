@@ -39,6 +39,12 @@ namespace VhvrSteamFrame
         /// <summary>Valheim's big-map hint keys ("MapZoomIn", "ButtonX"...) -> the button that does that job with VHVR's laser.</summary>
         public abstract Dictionary<string, string> MapLabels();
 
+        /// <summary>The button that closes the big map, for an extra hint Valheim doesn't have; null = no such hint.</summary>
+        public virtual string MapCloseLabel()
+        {
+            return null;
+        }
+
         public bool Matches(string controllerType)
         {
             return string.Equals(controllerType, ControllerType, StringComparison.OrdinalIgnoreCase);

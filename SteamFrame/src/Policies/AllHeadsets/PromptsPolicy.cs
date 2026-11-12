@@ -39,5 +39,21 @@ namespace VhvrSteamFrame
             string action = key.Substring(4);
             return action.StartsWith("Joy", StringComparison.Ordinal) ? action.Substring(3) : action;
         }
+
+        /// <summary>
+        /// Whether a picture on the big map is a D-pad picture (the cross by the pin icon picker), judged by its object or
+        /// sprite name: "dpad", "d-pad" or "d_pad" in either, ignoring case.
+        /// </summary>
+        public static bool IsDpadPicture(string objectName, string spriteName)
+        {
+            return HasDpad(objectName) || HasDpad(spriteName);
+        }
+
+        private static bool HasDpad(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            string n = name.ToLowerInvariant().Replace("-", "").Replace("_", "").Replace(" ", "");
+            return n.Contains("dpad");
+        }
     }
 }

@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 760" width="100%" height="100%">
+  <defs>
+    <style>
+      .canvas-bg { fill: #202327; }
+      .shell { fill: #262b30; stroke: #8fa3b5; stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+      .seam { fill: none; stroke: #6c8092; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+      .ctrl-outer { fill: #1d2125; stroke: #8fa3b5; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+      .ctrl-inner { fill: #262b30; stroke: #8fa3b5; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+      .led-dot { fill: #8fa3b5; }
+      .btn-label { fill: #8fa3b5; font-family: system-ui, -apple-system, sans-serif; font-size: 13px; font-weight: 600; text-anchor: middle; dominant-baseline: central; }
+    </style>
+
+    <!-- Horizontal Crop Plane for the Bottom Trigger/Bumper Side View -->
+    <clipPath id="trigger-crop">
+      <rect x="-130" y="-190" width="260" height="202" />
+    </clipPath>
+
+    <!-- Top-Down Thumbstick (3 Concentric Rings Matching Reference 1) -->
+    <g id="thumbstick-top">
+      <circle cx="0" cy="0" r="31" class="ctrl-outer" />
+      <circle cx="0" cy="0" r="24.5" class="ctrl-inner" />
+      <circle cx="0" cy="0" r="20" class="ctrl-outer" />
+    </g>
+
+    <!-- Reusable Top-Down Handle, Seam, Lanyard Loop & Dual-Stage Grip Button (Left Orientation) -->
+    <g id="top-handle-assembly">
+      <!-- Bottom Lanyard Loop -->
+      <rect id="lanyard-loop" x="-32.5" y="295" width="7" height="27" rx="3.5" class="ctrl-outer" />
+
+      <!-- Protruding Dual-Stage Grip Button on Inner Neck -->
+      <path id="dual-stage-grip" d="
+        M 10 100
+        L 26 105
+        C 28 118, 30 132, 30 142
+        C 30 149, 25 152, 18 151
+        L 3 148 Z" class="ctrl-outer" />
+
+      <!-- Full Ergonomic Handle Body -->
+      <path id="handle-body" d="
+        M -98 48
+        C -82 88, -72 145, -66 225
+        C -63 275, -48 302, -29 302
+        C -10 302, 3 275, 4 235
+        C 5 185, 0 135, 14 95 Z" class="shell" />
+
+      <!-- Vertical Handle Split Seam -->
+      <line x1="-29" y1="106" x2="-29" y2="302" class="seam" />
+    </g>
+
+    <!-- Reusable Cropped Side Profile for Triggers & Bumpers (Left Controller Facing Right) -->
+    <g id="cropped-side-profile" clip-path="url(#trigger-crop)">
+      <!-- Angled Knurled Thumbstick Profile -->
+      <g id="side-thumbstick" transform="translate(-38, -110) rotate(-25)">
+        <path d="M -11 8 L -11 -4 L 11 -4 L 11 8 Z" class="ctrl-outer" />
+        <rect x="-24" y="-14" width="48" height="10" rx="4.5" class="ctrl-inner" />
+        <line x1="-18" y1="-13" x2="-18" y2="-5" class="seam" />
+        <line x1="-13" y1="-13" x2="-13" y2="-5" class="seam" />
+        <line x1="-8" y1="-13" x2="-8" y2="-5" class="seam" />
+        <line x1="-3" y1="-13" x2="-3" y2="-5" class="seam" />
+        <line x1="2" y1="-13" x2="2" y2="-5" class="seam" />
+        <line x1="7" y1="-13" x2="7" y2="-5" class="seam" />
+        <line x1="12" y1="-13" x2="12" y2="-5" class="seam" />
+        <line x1="17" y1="-13" x2="17" y2="-5" class="seam" />
+      </g>
+
+      <!-- Stacked Bumper (Upper) & Curved Trigger (Lower) -->
+      <g id="side-bumper-trigger">
+        <path id="side-bumper" d="
+          M 70 -122
+          C 77 -112, 79 -90, 84 -73
+          C 85 -69, 81 -67, 74 -68
+          L 53 -74 Z" class="ctrl-outer" />
+        <path d="M 67 -115 C 72 -102, 74 -86, 77 -71" class="seam" />
+
+        <!-- Hinge / Gap Detail -->
+        <path d="M 54 -72 L 73 -66 L 71 -61 L 52 -66 Z" class="ctrl-inner" />
+
+        <!-- Concave-Flared Trigger -->
+        <path id="side-trigger" d="
+          M 51 -64
+          L 76 -60
+          C 79 -59, 79 -54, 77 -47
+          C 74 -37, 76 -26, 86 -15
+          C 89 -11, 86 -7, 81 -8
+          C 70 -11, 61 -22, 46 -27 Z" class="ctrl-outer" />
+        <path d="M 62 -60 C 62 -44, 65 -28, 79 -11" class="seam" />
+      </g>
+
+      <!-- Upper Controller Shell (Cropped cleanly at y = 12) -->
+      <path id="side-shell" d="
+        M -94 -64
+        C -101 -68, -99 -77, -88 -83
+        C -32 -112, 34 -142, 88 -164
+        C 95 -167, 100 -161, 97 -154
+        C 88 -134, 71 -115, 60 -92
+        C 49 -70, 46 -46, 48 -21
+        C 48 -15, 43 -13, 38 -17
+        C 25 -27, 8 -21, 1 -2
+        C -8 24, -14 82, -16 142
+        L -84 138
+        C -87 82, -79 20, -73 -32
+        C -71 -46, -77 -54, -85 -57
+        C -89 -59, -91 -62, -94 -64 Z" class="shell" />
+
+      <!-- Top Saucer Rim Seam & Rear Neck Contour -->
+      <path d="M -96 -71 C -35 -101, 34 -132, 97 -157" class="seam" />
+      <path d="M -90 -61 C -78 -56, -68 -51, -66 -38" class="seam" />
+
+      <!-- Handle Vertical Split Seam & Upper Side Grip Button -->
+      <path d="M -42 -66 C -41 15, -45 105, -44 191" class="seam" />
+      <path id="side-grip" d="
+        M -42 -8
+        L -23 -13
+        C -18 -14, -15 -11, -15 -6
+        L -16 20
+        L -43 32 Z" class="seam" />
+    </g>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="760" class="canvas-bg" />
+
+  <!-- ==================== TOP ROW: FULL TOP-DOWN L/R CONTROLLERS ==================== -->
+
+  <!-- LEFT CONTROLLER (TOP VIEW) -->
+  <g id="left-controller-top" transform="translate(260, 155)">
+    <!-- Handle, Seam, Lanyard Loop & Dual-Stage Grip Button -->
+    <use href="#top-handle-assembly" />
+
+    <!-- Circular Top Dish -->
+    <circle id="left-dish" cx="0" cy="0" r="110" class="shell" />
+
+    <!-- Status LED Dot -->
+    <circle cx="-7" cy="-68" r="2.2" class="led-dot" />
+
+    <!-- View Pill Button (Tilted +12 deg) -->
+    <rect id="left-view-btn" x="-22" y="-55" width="24" height="10" rx="5" transform="rotate(12, -10, -50)" class="ctrl-outer" />
+
+    <!-- D-Pad (Tilted +12 deg) -->
+    <g id="left-dpad" transform="translate(-50, -11) rotate(12)">
+      <path d="
+        M -11.5 -30
+        C -11.5 -33, -9.5 -35, -6.5 -35
+        H 6.5 C 9.5 -35, 11.5 -33, 11.5 -30
+        V -11.5 H 30
+        C 33 -11.5, 35 -9.5, 35 -6.5
+        V 6.5 C 35 9.5, 33 11.5, 30 11.5
+        H 11.5 V 30
+        C 11.5 33, 9.5 35, 6.5 35
+        H -6.5 C -9.5 35, -11.5 33, -11.5 30
+        V 11.5 H -30
+        C -33 11.5, -35 9.5, -35 6.5
+        V -6.5 C -35 -9.5, -33 -11.5, -30 -11.5
+        H -11.5 Z" class="ctrl-outer" />
+    </g>
+
+    <!-- Left Thumbstick -->
+    <use id="left-stick" href="#thumbstick-top" transform="translate(33, 15)" />
+
+    <!-- Left Steam Button -->
+    <circle id="left-steam-btn" cx="-26" cy="48" r="13" class="ctrl-outer" />
+  </g>
+
+  <!-- RIGHT CONTROLLER (TOP VIEW) -->
+  <g id="right-controller-top" transform="translate(540, 155)">
+    <!-- Mirrored Handle, Seam, Lanyard Loop & Dual-Stage Grip Button -->
+    <use href="#top-handle-assembly" transform="scale(-1, 1)" />
+
+    <!-- Circular Top Dish -->
+    <circle id="right-dish" cx="0" cy="0" r="110" class="shell" />
+
+    <!-- Status LED Dot -->
+    <circle cx="7" cy="-68" r="2.2" class="led-dot" />
+
+    <!-- Menu Pill Button (Tilted -12 deg) -->
+    <rect id="right-menu-btn" x="-2" y="-55" width="24" height="10" rx="5" transform="rotate(-12, 10, -50)" class="ctrl-outer" />
+
+    <!-- Right Thumbstick -->
+    <use id="right-stick" href="#thumbstick-top" transform="translate(-33, 15)" />
+
+    <!-- ABXY Diamond Cluster (Tilted -12 deg, Upright Labels) -->
+    <g id="right-abxy">
+      <g id="btn-y" transform="translate(47.8, -35.2)">
+        <circle cx="0" cy="0" r="13.5" class="ctrl-outer" />
+        <text x="0" y="0" class="btn-label">Y</text>
+      </g>
+      <g id="btn-b" transform="translate(77.2, -16.2)">
+        <circle cx="0" cy="0" r="13.5" class="ctrl-outer" />
+        <text x="0" y="0" class="btn-label">B</text>
+      </g>
+      <g id="btn-x" transform="translate(28.8, -5.8)">
+        <circle cx="0" cy="0" r="13.5" class="ctrl-outer" />
+        <text x="0" y="0" class="btn-label">X</text>
+      </g>
+      <g id="btn-a" transform="translate(58.2, 13.2)">
+        <circle cx="0" cy="0" r="13.5" class="ctrl-outer" />
+        <text x="0" y="0" class="btn-label">A</text>
+      </g>
+    </g>
+
+    <!-- Right Steam Button -->
+    <circle id="right-steam-btn" cx="26" cy="48" r="13" class="ctrl-outer" />
+  </g>
+
+  <!-- ==================== BOTTOM ROW: CROPPED RT/LT TRIGGER PROFILES ==================== -->
+
+  <!-- LEFT TRIGGER / BUMPER PROFILE (Facing Inward/Right) -->
+  <g id="left-controller-triggers" transform="translate(255, 700)">
+    <use href="#cropped-side-profile" />
+  </g>
+
+  <!-- RIGHT TRIGGER / BUMPER PROFILE (Mirrored Facing Inward/Left) -->
+  <g id="right-controller-triggers" transform="translate(545, 700) scale(-1, 1)">
+    <use href="#cropped-side-profile" />
+  </g>
+</svg>

@@ -5,7 +5,7 @@ Steam Frame controllers feel right in Valheim: button prompts that show the real
 punching, seated/standing play, safer Frame bindings, and a **Steam Frame** tab in VHVR's settings with a button guide
 and the recenter pose. It runs next to official VHVR and changes none of VHVR's files and no SteamVR setting.
 
-Version 0.3.3, built against VHVR 0.11.1. Everything is tested on a Steam Frame only.
+Version 0.5.3, built against VHVR 0.11.1. Everything is tested on a Steam Frame only.
 
 ## Scope legend
 
@@ -85,7 +85,7 @@ A module that can't find the VHVR code it needs switches itself off and logs why
 | MenuStickClicks | All headsets | Right/left stick click = Place stacks / Take all in chests | `[Menus]` |
 | Crouch | All headsets | Crouch button ignored in chests, menus and the map; optional double-click crouch | `[Crouch]` |
 | Punch | All headsets | Checkboxes for what a bare-hand punch needs (grip / trigger / thumb on stick), with a looseness warning | `[Punch]` |
-| Posture | All headsets | Auto seated/standing from learned eye heights; Steam-button recenter re-measures | `[Posture]` |
+| Posture | All headsets | Seated or standing, you stay at your standing height: switches as you sit or stand, using the two heights you set (buttons on the tab); Steam-button recenter re-measures | `[Posture]` |
 | FrameTab | All headsets (UI) | "Steam Frame" tab in VHVR's settings: settings by scope, button guide, recenter pose and height | `[FrameTab]` |
 | Bindings | Steam Frame | Binding tweaks applied to Valheim's copy of VHVR's Frame binding (restart to apply) | `[Bindings]` |
 | ServerPasswords | Extra | Remembers a server's password after a successful join (Windows DPAPI-encrypted) | `[Servers]` |

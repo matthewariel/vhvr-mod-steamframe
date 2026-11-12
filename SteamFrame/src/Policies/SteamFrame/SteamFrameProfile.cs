@@ -63,13 +63,25 @@ namespace VhvrSteamFrame
                 { "RTrigger", PromptsPolicy.Glyph("dpad_up") },           // zoom in
                 { "ButtonX", PromptsPolicy.Glyph("button_rs") },          // ping = right stick click (VHVR middle click)
                 { "ButtonA", "Grip + " + trigger },                       // add pin = grip + trigger chord
-                { "TabRight", PromptsPolicy.Glyph("button_lb") },         // remove pin (Valheim asks for TabRight) = bumper (VHVR right click)
+                // Remove pin (Valheim asks for TabRight) = the right bumper: VHVR's laser right-click is on the laser hand.
+                // Confirmed in the headset (2026-11-10): the left bumper doesn't remove pins.
+                { "TabRight", PromptsPolicy.Glyph("button_rb") },
                 { "TabLeft", trigger },                                   // cross off pin (Valheim asks for TabLeft) = trigger on the pin
-                { "DPadUp", trigger },                                    // pin icon / filter: point at it and pull the trigger
+                // The pin icon picker and the toggles in the map's side panel ask for D-pad left / right / up / down and Y;
+                // with the laser they're buttons: point at one and pull the trigger.
+                { "DPadLeft", trigger },
+                { "DPadUp", trigger },
                 { "DPadDown", trigger },
                 { "DPadRight", trigger },
-                { "ButtonB", PromptsPolicy.Glyph("button_back") },        // close = Map button
+                { "ButtonY", trigger },
+                { "ButtonB", PromptsPolicy.Glyph("button_start") },       // close = right Menu button (confirmed in the headset)
             };
+        }
+
+        /// <summary>The extra "Close map" hint added to the big map's hint bar (Valheim has none for it).</summary>
+        public override string MapCloseLabel()
+        {
+            return PromptsPolicy.Glyph("button_start");
         }
     }
 }
